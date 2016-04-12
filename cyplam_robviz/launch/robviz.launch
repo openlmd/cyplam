@@ -1,0 +1,10 @@
+<launch>
+    <arg name="sim" default="false" />
+
+    <include file="$(find cyplam_workcell)/launch/cyplam_workcell.launch">
+      <arg name="gui" value="false" />
+      <arg name="sim" value="$(arg sim)" />
+    </include>
+
+    <node name="robviz" pkg="cyplam_robviz" type="robviz.py"/>
+</launch>
