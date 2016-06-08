@@ -1,7 +1,7 @@
 <launch>
     <arg name="sim" default="false" />
 
-    <include file="$(find cyplam_workcell)/launch/cyplam_workcell.launch">
+    <include file="$(find cyplam_workcell)/launch/workcell.launch">
       <arg name="gui" value="false" />
       <arg name="sim" value="$(arg sim)" />
     </include>
