@@ -2,23 +2,27 @@
 import os
 import sys
 import time
-import signal
+import rospy
 
 from python_qt_binding import loadUi
 from python_qt_binding import QtGui
 from python_qt_binding import QtCore
 
 from move_data.move_data import move_file
+from mashes_measures.msg import MsgStatus
+
 
 
 class QtRecord(QtGui.QWidget):
     def __init__(self, parent=None):
         QtGui.QWidget.__init__(self, parent)
-
+        self.first = True
         # Layout are better for placing widgets
         layout = QtGui.QVBoxLayout()
         self.runButton = QtGui.QPushButton('Run')
         self.runButton.clicked.connect(self.callProgram)
+
+        rospy.Subscriber('/supervisor/status', MsgStatus, self.status)
 
         self.killButton = QtGui.QPushButton('Kill')
         self.killButton.clicked.connect(self.killProgram)
@@ -41,29 +45,41 @@ class QtRecord(QtGui.QWidget):
         self.process.started.connect(lambda: self.runButton.setEnabled(False))
         self.process.finished.connect(lambda: self.runButton.setEnabled(True))
 
+    def status(self, msg_status):
+        if self.first:
+            self.first = False
+            self.status_ant = msg_status.running
+        else:
+            if (self.status_ant != msg_status.running):
+                if msg_status.running:
+                    self.callProgram()
+                else:
+                    self.killProgram()
+            self.status_ant = msg_status.running
+
     def dataReady(self):
         cursor = self.output.textCursor()
         cursor.movePosition(cursor.End)
         text = str(self.process.readAll())
-        #text = text.splitlines()
         cursor.insertText(text)
         self.output.ensureCursorVisible()
 
     def callProgram(self):
-        #self.process.start('./test.sh')
         print os.getcwd()
-        os.chdir('/home/jorge/bag_data')
+        os.chdir('/home/panadeiro/bag_data/')
         print os.getcwd()
         filename = 'data_' + time.strftime('%Y%m%d-%H%M%S') + '.bag'
         self.process.start('rosrun rosbag record -O %s /tachyon/geometry /control/power' % filename)
 
     def killProgram(self):
         os.system('killall -2 record')
-        #print self.process.state()
-        move_file('/home/jorge/bag_data/', '/home/ryco/data/')
+        self.process.waitForFinished()
+        move_file('/home/panadeiro/bag_data/', '/home/ryco/data/')
+        self.runButton.setEnabled(True)
 
 
 if __name__ == '__main__':
+    rospy.init_node('record_panel')
     app = QtGui.QApplication(sys.argv)
     qt_record = QtRecord()
     qt_record.show()

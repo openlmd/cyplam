@@ -1,5 +1,6 @@
 import os
 import paramiko
+import glob
 
 
 def move_file(filename, destdir):
@@ -17,19 +18,18 @@ def move_file(filename, destdir):
         print line.strip()
 
     dirname, name = os.path.split(filename)
-    destname = os.path.join(destdir, name)
-    print destname
-
+    filenames = sorted(glob.glob(os.path.join(dirname, '*.bag')))
     sftp = ssh.open_sftp()
-    sftp.put(filename, destname)
+    for filename in filenames:
+        dirname, name = os.path.split(filename)
+        destname = os.path.join(destdir, name)
+        sftp.put(filename, destname)
+
     ssh.close()
 
 
 if __name__ == "__main__":
-    import glob
-
-    dirname = '/home/jorge/bag_data/'
+    dirname = '/home/panadeiro/bag_data/'
     filenames = sorted(glob.glob(os.path.join(dirname, '*.bag')))
-    print filenames
     filename = filenames[-1]
     move_file(filename, '/home/ryco/data/')
