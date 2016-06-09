@@ -2,8 +2,24 @@
   <arg name="gui" default="true" />
   <arg name="sim" default="false" />
 
-  <include file="$(find mashes_workcell)/launch/workcell.launch">
+  <include file="$(find aimen_workcell)/launch/workcell.launch">
+    <arg name="gui" value="false" />
+    <arg name="sim" value="$(arg sim)" />
+    <arg name="model" default="$(find mashes_workcell)/urdf/workcell.xacro" />
+  </include>
+
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find mashes_workcell)/config/workcell.rviz" required="true" if="$(arg gui)" />
+
+  <include file="$(find etna_scanning)/launch/profile.launch" unless="$(arg sim)">
     <arg name="gui" value="$(arg gui)" />
     <arg name="sim" value="$(arg sim)" />
+  </include>
+
+  <include file="$(find mashes_ueye)/launch/ueye.launch" unless="$(arg sim)">
+    <arg name="gui" value="$(arg gui)" />
+  </include>
+
+  <include file="$(find mashes_tachyon)/launch/tachyon.launch" unless="$(arg sim)">
+    <arg name="gui" value="$(arg gui)" />
   </include>
 </launch>
