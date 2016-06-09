@@ -3,83 +3,89 @@ import os
 import sys
 import time
 import rospy
+import rospkg
 
 from python_qt_binding import loadUi
 from python_qt_binding import QtGui
 from python_qt_binding import QtCore
 
-from move_data.move_data import move_file
 from mashes_measures.msg import MsgStatus
+from move_data.move_data import move_file
 
+
+TOPICS = ['/tachyon/image',
+          '/tachyon/geometry',
+          '/control/power',
+          '/joint_states']
 
 
 class QtRecord(QtGui.QWidget):
     def __init__(self, parent=None):
         QtGui.QWidget.__init__(self, parent)
-        self.first = True
-        # Layout are better for placing widgets
-        layout = QtGui.QVBoxLayout()
-        self.runButton = QtGui.QPushButton('Run')
-        self.runButton.clicked.connect(self.callProgram)
+        path = rospkg.RosPack().get_path('cyplam_data')
+        loadUi(os.path.join(path, 'resources', 'record.ui'), self)
 
-        rospy.Subscriber('/supervisor/status', MsgStatus, self.status)
+        self.btnRecord.clicked.connect(self.btnClickRecord)
 
-        self.killButton = QtGui.QPushButton('Kill')
-        self.killButton.clicked.connect(self.killProgram)
+        home = os.path.expanduser('~')
+        self.dirdata = os.path.join(home, 'bag_data')
+        if not os.path.exists(self.dirdata):
+            os.mkdir(self.dirdata)
+        self.filename = ''
 
-        self.output = QtGui.QTextEdit()
+        rospy.Subscriber(
+            '/supervisor/status', MsgStatus, self.cbStatus, queue_size=1)
+        self.status = False
+        self.running = False
 
-        layout.addWidget(self.output)
-        layout.addWidget(self.runButton)
-        layout.addWidget(self.killButton)
-
-        self.setLayout(layout)
-
-        # QProcess object for external app
         self.process = QtCore.QProcess(self)
-        # QProcess emits `readyRead` when there is data to be read
-        self.process.readyRead.connect(self.dataReady)
+        #self.process.readyRead.connect(self.dataReady)
 
-        # Just to prevent accidentally running multiple times
-        # Disable the button when process starts, and enable it when it finishes
-        self.process.started.connect(lambda: self.runButton.setEnabled(False))
-        self.process.finished.connect(lambda: self.runButton.setEnabled(True))
-
-    def status(self, msg_status):
-        if self.first:
-            self.first = False
-            self.status_ant = msg_status.running
+    def btnClickRecord(self):
+        self.running = not self.running
+        if self.running:
+            self.btnRecord.setText('Ready for Data')
+            self.txtOutput.textCursor().insertText('> ready for data.\n')
         else:
-            if (self.status_ant != msg_status.running):
-                if msg_status.running:
-                    self.callProgram()
-                else:
-                    self.killProgram()
-            self.status_ant = msg_status.running
+            self.btnRecord.setText('Record Data')
+            self.txtOutput.textCursor().insertText('> stopped.\n')
+
+    def cbStatus(self, msg_status):
+        if not self.status and msg_status.running:
+            if self.running:
+                self.btnRecord.setText('Recording...')
+                self.txtOutput.textCursor().insertText('> recording topics:\n%s\n' % '\n'.join(TOPICS))
+                self.callProgram()
+        elif self.status and not msg_status.running:
+            self.running = False
+            self.killProgram()
+            self.btnRecord.setText('Record Data')
+            self.txtOutput.textCursor().insertText('> %s recorded.\n' % self.filename)
+        self.status = msg_status.running
 
     def dataReady(self):
-        cursor = self.output.textCursor()
+        cursor = self.txtOutput.textCursor()
         cursor.movePosition(cursor.End)
         text = str(self.process.readAll())
         cursor.insertText(text)
-        self.output.ensureCursorVisible()
+        self.txtOutput.ensureCursorVisible()
 
     def callProgram(self):
-        print os.getcwd()
-        os.chdir('/home/panadeiro/bag_data/')
-        print os.getcwd()
-        filename = 'data_' + time.strftime('%Y%m%d-%H%M%S') + '.bag'
-        self.process.start('rosrun rosbag record -O %s /tachyon/geometry /control/power' % filename)
+        os.chdir(self.dirdata)
+        self.filename = 'data_' + time.strftime('%Y%m%d-%H%M%S') + '.bag'
+        self.process.start(
+            'rosrun rosbag record -O %s %s' % (self.filename, ' '.join(TOPICS)))
 
     def killProgram(self):
         os.system('killall -2 record')
         self.process.waitForFinished()
-        move_file('/home/panadeiro/bag_data/', '/home/ryco/data/')
-        self.runButton.setEnabled(True)
+        move_file(os.path.join(self.dirdata, self.filename), '/home/ryco/data/')
+        self.txtOutput.textCursor().insertText('> %s transfered.\n' % self.filename)
 
 
 if __name__ == '__main__':
     rospy.init_node('record_panel')
+
     app = QtGui.QApplication(sys.argv)
     qt_record = QtRecord()
     qt_record.show()
