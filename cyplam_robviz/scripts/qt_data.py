@@ -25,7 +25,6 @@ class QtData(QtGui.QWidget):
         self.btnConnect.clicked.connect(self.btnConnectClickced)
         self.btnJob.clicked.connect(self.btnJobClicked)
         self.btnPredict.clicked.connect(self.btnPredictClicked)
-        self.btnRecord.clicked.connect(self.btnRecordClicked)
 
     def btnConnectClickced(self):
         print 'Connect'
@@ -36,11 +35,9 @@ class QtData(QtGui.QWidget):
         print 'Job:', self.txtName.text()
 
     def btnPredictClicked(self):
-        print 'Predict'
-
-    def btnRecordClicked(self):
         print 'Base Material:', self.txtBaseMaterial.text()
         print 'Powder Material:', self.txtPowderMaterial.text()
+        print 'Predict'
 
 
 if __name__ == "__main__":

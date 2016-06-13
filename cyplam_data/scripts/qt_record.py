@@ -45,6 +45,10 @@ class QtRecord(QtGui.QWidget):
         self.running = not self.running
         if self.running:
             self.btnRecord.setText('Ready for Data')
+            self.txtOutput.textCursor().insertText(
+                str(rospy.get_param('/powder'))+'\n')
+            self.txtOutput.textCursor().insertText(
+                str(rospy.get_param('/process'))+'\n')
             self.txtOutput.textCursor().insertText('> ready for data.\n')
         else:
             self.btnRecord.setText('Record Data')

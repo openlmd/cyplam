@@ -21,14 +21,7 @@
      </property>
     </widget>
    </item>
-   <item row="7" column="0" colspan="2">
-    <widget class="QPushButton" name="btnRecord">
-     <property name="text">
-      <string>Record Data</string>
-     </property>
-    </widget>
-   </item>
-   <item row="9" column="0" colspan="2">
+   <item row="8" column="0" colspan="2">
     <widget class="Line" name="line_4">
      <property name="orientation">
       <enum>Qt::Horizontal</enum>
@@ -71,10 +64,14 @@
        </widget>
       </item>
       <item row="0" column="1">
-       <widget class="QLineEdit" name="txtName"/>
+       <widget class="QLineEdit" name="txtJobName">
+        <property name="text">
+         <string>job0001</string>
+        </property>
+       </widget>
       </item>
       <item row="0" column="0">
-       <widget class="QLabel" name="lblName">
+       <widget class="QLabel" name="lblJobName">
         <property name="text">
          <string>Name:   </string>
         </property>
@@ -159,7 +156,11 @@
        <number>3</number>
       </property>
       <item row="3" column="2">
-       <widget class="QLineEdit" name="txtUser"/>
+       <widget class="QLineEdit" name="txtUser">
+        <property name="text">
+         <string>ryco</string>
+        </property>
+       </widget>
       </item>
       <item row="3" column="1">
        <widget class="QLabel" name="lblUser">
@@ -184,6 +185,9 @@
       </item>
       <item row="6" column="2">
        <widget class="QLineEdit" name="txtPassword">
+        <property name="text">
+         <string>faraday</string>
+        </property>
         <property name="echoMode">
          <enum>QLineEdit::Password</enum>
         </property>
@@ -228,7 +232,7 @@ Sending data...</string>
      </layout>
     </widget>
    </item>
-   <item row="8" column="0">
+   <item row="9" column="0" colspan="2">
     <spacer name="verticalSpacer">
      <property name="orientation">
       <enum>Qt::Vertical</enum>

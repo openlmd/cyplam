@@ -1,0 +1,2 @@
+powder: {shield: 10.0, carrier: 5.0, stirrer: 20.0, turntable: 15.0}
+process: {speed: 8, power: 1000}

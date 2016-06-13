@@ -8,7 +8,7 @@
     <arg name="model" default="$(find mashes_workcell)/urdf/workcell.xacro" />
   </include>
 
-  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find mashes_workcell)/config/workcell.rviz" required="true" if="$(arg gui)" />
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find cyplam_workcell)/config/workcell.rviz" required="true" if="$(arg gui)" />
 
   <include file="$(find etna_scanning)/launch/profile.launch" unless="$(arg sim)">
     <arg name="gui" value="$(arg gui)" />

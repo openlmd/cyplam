@@ -17,6 +17,7 @@ from mashes_measures.msg import MsgStatus
 
 from qt_data import QtData
 from qt_param import QtParam
+from qt_record import QtRecord
 
 
 path = rospkg.RosPack().get_path('cyplam_robviz')
@@ -105,9 +106,11 @@ class Robviz(QtGui.QMainWindow):
 
         self.qtData = QtData()
         self.qtParam = QtParam()
+        self.qtRecord = QtRecord()
 
         self.tabWidget.addTab(self.qtData, 'Data')
         self.tabWidget.addTab(self.qtParam, 'Parameters')
+        self.tabWidget.addTab(self.qtRecord, 'Record')
 
         #self.qtData.accepted.connect(self.qtPartAccepted)
 

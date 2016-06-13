@@ -2,8 +2,8 @@ cmake_minimum_required(VERSION 2.8.3)
 project(cyplam_robviz)
 
 find_package(catkin REQUIRED COMPONENTS
-  roscpp
   rospy
+  roscpp
   std_msgs
 )
 
