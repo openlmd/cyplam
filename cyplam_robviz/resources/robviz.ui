@@ -40,7 +40,7 @@
   </property>
   <property name="windowIcon">
    <iconset>
-    <normaloff>proper.png</normaloff>proper.png</iconset>
+    <normaloff>c.png</normaloff>c.png</iconset>
   </property>
   <property name="autoFillBackground">
    <bool>false</bool>

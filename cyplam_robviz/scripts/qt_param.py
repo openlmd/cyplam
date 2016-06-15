@@ -10,6 +10,8 @@ from python_qt_binding import QtCore
 
 
 class QtParam(QtGui.QWidget):
+    accepted = QtCore.pyqtSignal(list)
+
     def __init__(self, parent=None):
         QtGui.QWidget.__init__(self, parent)
         path = rospkg.RosPack().get_path('cyplam_robviz')
@@ -52,6 +54,8 @@ class QtParam(QtGui.QWidget):
         process = self.getProcessParameters()
         rospy.set_param('/process', process)
         print 'Process parameters:', rospy.get_param('/process')
+
+        self.accepted.emit([])
 
 
 if __name__ == "__main__":
