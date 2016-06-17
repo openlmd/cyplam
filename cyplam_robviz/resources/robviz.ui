@@ -202,7 +202,7 @@
        <string/>
       </property>
       <property name="pixmap">
-       <pixmap>cyplam.png</pixmap>
+       <pixmap>c.png</pixmap>
       </property>
       <property name="alignment">
        <set>Qt::AlignCenter</set>
