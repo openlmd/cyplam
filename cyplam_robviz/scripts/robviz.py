@@ -104,9 +104,12 @@ class Robviz(QtGui.QMainWindow):
 
         self.boxPlot.addWidget(MyViz())
 
-        self.qtData = QtData()
-        self.qtParam = QtParam()
-        self.qtRecord = QtRecord()
+        home = os.path.expanduser('~')
+        self.workdir = os.path.join(home, 'bag_data/')
+
+        self.qtData = QtData(self)
+        self.qtParam = QtParam(self)
+        self.qtRecord = QtRecord(self)
 
         self.tabWidget.addTab(self.qtData, 'Data')
         self.tabWidget.addTab(self.qtParam, 'Parameters')

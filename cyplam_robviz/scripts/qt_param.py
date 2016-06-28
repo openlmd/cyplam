@@ -12,7 +12,7 @@ from python_qt_binding import QtCore
 class QtParam(QtGui.QWidget):
     accepted = QtCore.pyqtSignal(list)
 
-    def __init__(self, parent=None):
+    def __init__(self, parent):
         QtGui.QWidget.__init__(self, parent)
         path = rospkg.RosPack().get_path('cyplam_robviz')
         loadUi(os.path.join(path, 'resources', 'param.ui'), self)
@@ -62,6 +62,6 @@ if __name__ == "__main__":
     rospy.init_node('parameters_panel')
 
     app = QtGui.QApplication(sys.argv)
-    qt_param = QtParam()
+    qt_param = QtParam(parent=None)
     qt_param.show()
     app.exec_()
