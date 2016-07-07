@@ -22,7 +22,7 @@ TOPICS = ['/tachyon/image',
 
 
 class QtRecord(QtGui.QWidget):
-    def __init__(self, parent):
+    def __init__(self, parent=None):
         QtGui.QWidget.__init__(self, parent)
         path = rospkg.RosPack().get_path('cyplam_data')
         loadUi(os.path.join(path, 'resources', 'record.ui'), self)
@@ -150,6 +150,6 @@ class QtRecord(QtGui.QWidget):
 if __name__ == '__main__':
     rospy.init_node('record_panel')
     app = QtGui.QApplication(sys.argv)
-    qt_record = QtRecord(parent=None)
+    qt_record = QtRecord()
     qt_record.show()
     app.exec_()

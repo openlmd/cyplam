@@ -2,7 +2,6 @@
 import os
 import rospy
 import rospkg
-import rosparam
 
 from python_qt_binding import loadUi
 from python_qt_binding import QtGui
@@ -11,7 +10,6 @@ from python_qt_binding import QtCore
 import tf
 import rviz
 import numpy as np
-from std_msgs.msg import String
 from mashes_measures.msg import MsgVelocity
 from mashes_measures.msg import MsgStatus
 
@@ -108,8 +106,12 @@ class Robviz(QtGui.QMainWindow):
         self.workdir = os.path.join(home, 'bag_data/')
 
         self.qtData = QtData(self)
-        self.qtParam = QtParam(self)
+        self.qtParam = QtParam()
         self.qtRecord = QtRecord(self)
+
+        self.qtData.setMaterialParameters(rospy.get_param('/material'))
+        self.qtParam.setPowderParameters(rospy.get_param('/powder'))
+        self.qtParam.setProcessParameters(rospy.get_param('/process'))
 
         self.tabWidget.addTab(self.qtData, 'Data')
         self.tabWidget.addTab(self.qtParam, 'Parameters')
@@ -123,22 +125,22 @@ class Robviz(QtGui.QMainWindow):
         rospy.Subscriber('/supervisor/status', MsgStatus, self.cb_status, queue_size=1)
 
     def cb_velocity(self, msg_velocity):
-        self.lblInfo.setText("Speed: %.1f mm/s" % (1000 * msg_velocity.speed))
+        self.lblSpeed.setText("Speed: %.1f mm/s" % (1000 * msg_velocity.speed))
 
     def cb_status(self, msg_status):
-        txt_status = ''
         if msg_status.laser_on:
-            txt_status = 'Laser ON' + '\n'
-            # self.lblStatus.setStyleSheet(
+            txt_laser = 'Laser ON'
+            # self.lblLaser.setStyleSheet(
             #     "background-color: rgb(255, 255, 0); color: rgb(0, 0, 0);")
         else:
-            txt_status = 'Laser OFF' + '\n'
-            # self.lblStatus.setStyleSheet(
+            txt_laser = 'Laser OFF'
+            # self.lblLaser.setStyleSheet(
             #     "background-color: rgb(255, 255, 0); color: rgb(0, 0, 0);")
+        self.lblLaser.setText(txt_laser)
         if msg_status.running:
-            txt_status = txt_status + 'Running'
+            txt_status = 'Running'
         else:
-            txt_status = txt_status + 'Stopped'
+            txt_status = 'Stopped'
         self.lblStatus.setText(txt_status)
 
     def btnQuitClicked(self):

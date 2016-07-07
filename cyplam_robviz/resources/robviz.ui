@@ -64,40 +64,14 @@
     </font>
    </property>
    <layout class="QGridLayout" name="gridLayout">
-    <item row="14" column="1">
-     <widget class="QLabel" name="lblInfo">
-      <property name="font">
-       <font>
-        <weight>50</weight>
-        <bold>false</bold>
-       </font>
-      </property>
-      <property name="text">
-       <string>info</string>
-      </property>
-      <property name="margin">
-       <number>3</number>
-      </property>
-      <property name="indent">
-       <number>3</number>
-      </property>
-     </widget>
-    </item>
-    <item row="12" column="1">
-     <widget class="Line" name="line_2">
-      <property name="orientation">
-       <enum>Qt::Horizontal</enum>
-      </property>
-     </widget>
-    </item>
-    <item row="0" column="0" rowspan="22">
+    <item row="0" column="0" rowspan="25">
      <layout class="QHBoxLayout" name="boxPlot">
       <property name="spacing">
        <number>0</number>
       </property>
      </layout>
     </item>
-    <item row="21" column="1">
+    <item row="24" column="1">
      <widget class="QPushButton" name="btnQuit">
       <property name="enabled">
        <bool>true</bool>
@@ -143,14 +117,86 @@
       </property>
      </widget>
     </item>
-    <item row="20" column="1">
+    <item row="23" column="1">
      <widget class="Line" name="line_3">
       <property name="orientation">
        <enum>Qt::Horizontal</enum>
       </property>
      </widget>
     </item>
-    <item row="11" column="1">
+    <item row="21" column="1">
+     <widget class="QLabel" name="lblSpeed">
+      <property name="font">
+       <font>
+        <weight>50</weight>
+        <bold>false</bold>
+       </font>
+      </property>
+      <property name="text">
+       <string>speed</string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignCenter</set>
+      </property>
+      <property name="margin">
+       <number>3</number>
+      </property>
+      <property name="indent">
+       <number>3</number>
+      </property>
+     </widget>
+    </item>
+    <item row="22" column="1">
+     <widget class="QLabel" name="lblStatus">
+      <property name="font">
+       <font>
+        <weight>75</weight>
+        <bold>true</bold>
+       </font>
+      </property>
+      <property name="styleSheet">
+       <string notr="true"/>
+      </property>
+      <property name="text">
+       <string>status</string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignCenter</set>
+      </property>
+      <property name="margin">
+       <number>3</number>
+      </property>
+      <property name="indent">
+       <number>3</number>
+      </property>
+     </widget>
+    </item>
+    <item row="20" column="1">
+     <widget class="QLabel" name="lblLaser">
+      <property name="font">
+       <font>
+        <pointsize>10</pointsize>
+        <weight>75</weight>
+        <italic>false</italic>
+        <bold>true</bold>
+       </font>
+      </property>
+      <property name="text">
+       <string>laser</string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignCenter</set>
+      </property>
+     </widget>
+    </item>
+    <item row="19" column="1">
+     <widget class="Line" name="line_2">
+      <property name="orientation">
+       <enum>Qt::Horizontal</enum>
+      </property>
+     </widget>
+    </item>
+    <item row="18" column="1">
      <widget class="QTabWidget" name="tabWidget">
       <property name="minimumSize">
        <size>
@@ -174,23 +220,7 @@
       </property>
      </widget>
     </item>
-    <item row="17" column="1" rowspan="2">
-     <widget class="QLabel" name="lblStatus">
-      <property name="styleSheet">
-       <string notr="true">background-color: rgb(255, 255, 127);</string>
-      </property>
-      <property name="text">
-       <string>status</string>
-      </property>
-      <property name="margin">
-       <number>3</number>
-      </property>
-      <property name="indent">
-       <number>3</number>
-      </property>
-     </widget>
-    </item>
-    <item row="4" column="1" rowspan="4">
+    <item row="4" column="1" rowspan="11">
      <widget class="QLabel" name="lblLogo">
       <property name="frameShape">
        <enum>QFrame::NoFrame</enum>
