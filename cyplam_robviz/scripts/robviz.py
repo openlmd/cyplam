@@ -15,7 +15,6 @@ from mashes_measures.msg import MsgStatus
 
 from qt_data import QtData
 from qt_param import QtParam
-from qt_record import QtRecord
 
 
 path = rospkg.RosPack().get_path('cyplam_robviz')
@@ -105,17 +104,11 @@ class Robviz(QtGui.QMainWindow):
         home = os.path.expanduser('~')
         self.workdir = os.path.join(home, 'bag_data/')
 
-        self.qtData = QtData(self)
+        self.qtData = QtData()
         self.qtParam = QtParam()
-        self.qtRecord = QtRecord(self)
-
-        self.qtData.setMaterialParameters(rospy.get_param('/material'))
-        self.qtParam.setPowderParameters(rospy.get_param('/powder'))
-        self.qtParam.setProcessParameters(rospy.get_param('/process'))
 
         self.tabWidget.addTab(self.qtData, 'Data')
         self.tabWidget.addTab(self.qtParam, 'Parameters')
-        self.tabWidget.addTab(self.qtRecord, 'Record')
 
         #self.qtData.accepted.connect(self.qtPartAccepted)
 

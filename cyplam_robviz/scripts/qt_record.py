@@ -1,1 +1,0 @@
-../../cyplam_data/scripts/qt_record.py
