@@ -48,7 +48,7 @@
      </property>
      <layout class="QVBoxLayout" name="verticalLayout">
       <property name="spacing">
-       <number>0</number>
+       <number>6</number>
       </property>
       <property name="leftMargin">
        <number>0</number>
@@ -279,7 +279,7 @@
            </font>
           </property>
           <property name="text">
-           <string> Speed:           </string>
+           <string> Speed:            </string>
           </property>
          </widget>
         </item>
@@ -317,7 +317,30 @@
            </font>
           </property>
           <property name="text">
-           <string> Power:</string>
+           <string> Power: </string>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="0">
+         <widget class="QLabel" name="lblFocus">
+          <property name="text">
+           <string> Focus: </string>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="1">
+         <widget class="QDoubleSpinBox" name="sbFocus">
+          <property name="suffix">
+           <string> mm</string>
+          </property>
+          <property name="decimals">
+           <number>0</number>
+          </property>
+          <property name="minimum">
+           <double>-5.000000000000000</double>
+          </property>
+          <property name="maximum">
+           <double>5.000000000000000</double>
           </property>
          </widget>
         </item>

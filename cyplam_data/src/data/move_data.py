@@ -50,9 +50,8 @@ if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('-f', '--file', type=str,
-                        default=None,
-                        help='path to input file')
+    parser.add_argument(
+        '-f', '--file', type=str, default=None, help='input file')
     args = parser.parse_args()
 
     filename = args.file

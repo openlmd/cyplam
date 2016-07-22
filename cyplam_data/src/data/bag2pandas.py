@@ -1,8 +1,3 @@
-# -*- coding: utf-8 -*-
-# <nbformat>3.0</nbformat>
-
-# <codecell>
-
 import cv2
 import rosbag
 import pandas as pd
@@ -11,7 +6,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from mashes_measures.msg import MsgGeometry
-from mashes_control.msg import MsgPower
+from cladplus_control.msg import MsgPower
 
 from cv_bridge import CvBridge
 
@@ -71,111 +66,111 @@ def merge_topic_data(data1, data2):
     #control = pd.concat([self.geometry, self.control], axis=1)
     return data
 
-# <codecell>
 
-import glob
-filenames = sorted(glob.glob('/home/ryco/data/*.bag'))
-filename = filenames[-1]
-print filename
+if __name__ == "__main__":
+    import glob
+    import argparse
 
-# <codecell>
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        '-b', '--bag', type=str, default=None, help='input bag file')
+    parser.add_argument(
+        '-t', '--topics', help='list of topics',  action='store_true')
+    args = parser.parse_args()
 
-bag = rosbag.Bag(filename)
-topics = read_topic_list(bag)
-bag.close()
-print topics
+    filename = args.bag
+    if filename is None:
+        filenames = sorted(glob.glob('/home/jorge/data/*.bag'))
+        filename = filenames[-1]
+    filename = '/home/jorge/data/data_20160721-003440.bag'
+    print filename
 
-# <codecell>
+    if args.topics:
+        bag = rosbag.Bag(filename)
+        topics = read_topic_list(bag)
+        bag.close()
+        print 'Topics:', topics
 
-bag = rosbag.Bag(filename)
-images = read_topic_img(bag, '/tachyon/image')
-geometry = read_topic_data(bag, '/tachyon/geometry')
-control = read_topic_data(bag, '/control/power')
-bag.close()
+    # Get dataframes
+    bag = rosbag.Bag(filename)
+    images = read_topic_img(bag, '/tachyon/image')
+    #geometry = read_topic_data(bag, '/tachyon/geometry')
+    #control = read_topic_data(bag, '/control/power')
+    camera = read_topic_img(bag, '/camera/image')
+    joints = read_topic_data(bag, '/joint_states')
+    bag.close()
 
-# <codecell>
+    # TODO: Read all the topics as dataframes and merge corresponding subtopics
+    # /tachyon/image + /tachyon/geometry = /tachyon (dataframe)
 
-measures = merge_topic_data(images, geometry)
-measures = merge_topic_data(measures, control)
+    # Measures, merge dataframes example
+    #measures = merge_topic_data(images, geometry)
+    #measures = merge_topic_data(measures, control)
+    #measures = measures.rename(columns={'value': 'power'})
+    #measures.columns
+    measures = images
 
-# <codecell>
+    # Save HDF5 file
+    images.to_hdf('foo.h5', 'images')
+    camera.to_hdf('foo.h5', 'camera')
+    joints.to_hdf('foo.h5', 'joints')
+    # pd.read_hdf('foo.h5','geometry')
 
-measures = measures.rename(columns={'value': 'power'})
-measures.columns
+    # <codecell>
+    img_str = measures.loc[69]['frame']
+    img = deserialize_frame(img_str)
+    plt.figure()
+    plt.imshow(img, interpolation='none')
+    plt.show()
 
-# <codecell>
+    frames = read_frames(measures[measures['minor_axis'] > 0]['frame'])
+    print frames.shape
+    plt.figure()
+    plt.imshow(frames[50], interpolation='none')
+    plt.show()
 
-img_str= measures.loc[69]['frame']
-img = deserialize_frame(img_str)
-imshow(img, interpolation='none')
+    # <codecell>
+    print 'Len power measures:', len(measures['power'])
+    print 'Len minor_axis measures:', len(measures['minor_axis'])
+    N = len(measures['power'])
+    print measures.loc[N-10:N-1]['time']
+    time = np.array(measures['time'])
+    print np.isclose(time[1:], time[:-1], atol=1e-03, rtol=0)
 
-frames = read_frames(measures[measures['minor_axis'] > 0]['frame'])
-imshow(frames[50], interpolation='none')
-print frames.shape
+    # <codecell>
 
-# <codecell>
+    measures['time'] = measures['time'] - measures['time'][0]
+    measures = measures[measures['power'].notnull()]
+    plt.subplot(211)
+    measures.plot(x='time', y='minor_axis')
+    plt.subplot(212)
+    measures.plot(x='time', y='power')
+    plt.show()
+    measures
 
-geometry.to_csv('mi_ge.csv')
-geometry.to_hdf('foo.h5','geometry')
-control.to_hdf('foo.h5', 'control')
-pd.read_hdf('foo.h5','geometry')
+    # <codecell>
+    idx = measures.index[measures['minor_axis'] > 0]
+    idx0, idx1 = idx[0], idx[-1]
+    time0 = measures['time'][idx0]
+    time1 = measures['time'][idx1]
+    print idx0, idx1, time0, time1
+    idx = measures.index[measures['time'] < time0-1]
+    idx0 = idx[-1]
+    idx = measures.index[measures['time'] > time1+1]
+    idx1 = idx[0]
+    print idx0, idx1
+    if idx0 < 0:
+        idx0 = 0
+    if idx1 > N:
+        idx1 = N
+    meas = measures.loc[idx0:idx1]
+    time = np.array(meas['time'])
+    plt.subplot(211)
+    measures.plot(x='time', y='minor_axis', xlim=(time[0], time[-1]), ylim=(0, 5))
+    plt.subplot(212)
+    measures.plot(x='time', y='power', xlim=(time[0], time[-1]), ylim=(0, 1500))
 
-# <codecell>
-
-print 'Len power measures:', len(measures['power'])
-print 'Len minor_axis measures:', len(measures['minor_axis'])
-N = len(measures['power'])
-print measures.loc[N-10:N-1]['time']
-time = np.array(measures['time'])
-print numpy.isclose(time[1:], time[:-1], atol=1e-03, rtol=0)
-
-# <codecell>
-
-measures['time'] = measures['time'] - measures['time'][0]
-measures = measures[measures['power'].notnull()]
-plt.subplot(211)
-measures.plot(x='time', y='minor_axis')
-plt.subplot(212)
-measures.plot(x='time', y='power')
-plt.show()
-measures
-
-# <codecell>
-
-idx = measures.index[measures['minor_axis'] > 0]
-idx0, idx1 = idx[0], idx[-1]
-time0 = measures['time'][idx0]
-time1 = measures['time'][idx1]
-print idx0, idx1, time0, time1
-idx = measures.index[measures['time'] < time0-1]
-idx0 = idx[-1]
-idx = measures.index[measures['time'] > time1+1]
-idx1 = idx[0]
-print idx0, idx1
-if idx0 < 0:
-    idx0 = 0
-if idx1 > N:
-    idx1 = N
-meas = measures.loc[idx0:idx1]
-time = np.array(meas['time'])
-plt.subplot(211)
-measures.plot(x='time', y='minor_axis', xlim=(time[0], time[-1]), ylim=(0, 5))
-plt.subplot(212)
-measures.plot(x='time', y='power', xlim=(time[0], time[-1]), ylim=(0, 1500))
-
-# <codecell>
-
-mean = meas['minor_axis'].mean()
-std = meas['minor_axis'].std()
-print mean, std
-
-# <codecell>
-
-bag = rosbag.Bag(filename)
-joints = read_topic_data(bag, '/joint_states')
-bag.close()
-joints
-
-# <codecell>
-
-
+    # <codecell>
+    mean = meas['minor_axis'].mean()
+    std = meas['minor_axis'].std()
+    print mean, std

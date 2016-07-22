@@ -18,7 +18,7 @@ from data.move_data import test_connection
 
 TOPICS = ['/tachyon/image',
           '/tachyon/geometry',
-          '/control/power',
+          #'/control/power',
           '/joint_states']
 
 PARAMS = ['/material',
