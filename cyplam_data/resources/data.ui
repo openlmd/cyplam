@@ -14,68 +14,6 @@
    <string>Form</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
-   <item row="18" column="0">
-    <widget class="QTextEdit" name="txtOutput"/>
-   </item>
-   <item row="5" column="0" colspan="2">
-    <widget class="Line" name="line_5">
-     <property name="orientation">
-      <enum>Qt::Horizontal</enum>
-     </property>
-    </widget>
-   </item>
-   <item row="21" column="0" colspan="2">
-    <widget class="Line" name="line_3">
-     <property name="orientation">
-      <enum>Qt::Horizontal</enum>
-     </property>
-    </widget>
-   </item>
-   <item row="4" column="0" colspan="2">
-    <widget class="QGroupBox" name="grpJob">
-     <property name="title">
-      <string>Job Task</string>
-     </property>
-     <layout class="QGridLayout" name="gridLayout_3">
-      <property name="leftMargin">
-       <number>0</number>
-      </property>
-      <property name="topMargin">
-       <number>9</number>
-      </property>
-      <property name="rightMargin">
-       <number>6</number>
-      </property>
-      <property name="bottomMargin">
-       <number>0</number>
-      </property>
-      <property name="spacing">
-       <number>3</number>
-      </property>
-      <item row="1" column="0" colspan="2">
-       <widget class="QPushButton" name="btnJob">
-        <property name="text">
-         <string>Create Job</string>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="1">
-       <widget class="QLineEdit" name="txtJobName">
-        <property name="text">
-         <string>job0001</string>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="0">
-       <widget class="QLabel" name="lblJobName">
-        <property name="text">
-         <string>Name:   </string>
-        </property>
-       </widget>
-      </item>
-     </layout>
-    </widget>
-   </item>
    <item row="6" column="0" colspan="2">
     <widget class="QGroupBox" name="grpMaterial">
      <property name="title">
@@ -133,28 +71,55 @@
      </layout>
     </widget>
    </item>
-   <item row="22" column="0" colspan="2">
-    <widget class="QGroupBox" name="grpInfo">
-     <property name="title">
-      <string>Job Info</string>
+   <item row="18" column="0">
+    <widget class="QTextEdit" name="txtOutput"/>
+   </item>
+   <item row="5" column="0" colspan="2">
+    <widget class="Line" name="line_5">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
      </property>
-     <layout class="QGridLayout" name="gridLayout_5">
+    </widget>
+   </item>
+   <item row="4" column="0" colspan="2">
+    <widget class="QGroupBox" name="grpJob">
+     <property name="title">
+      <string>Job Task</string>
+     </property>
+     <layout class="QGridLayout" name="gridLayout_3">
       <property name="leftMargin">
        <number>0</number>
       </property>
       <property name="topMargin">
-       <number>6</number>
+       <number>9</number>
       </property>
       <property name="rightMargin">
        <number>6</number>
       </property>
       <property name="bottomMargin">
-       <number>6</number>
+       <number>0</number>
       </property>
-      <item row="0" column="0">
-       <widget class="QLabel" name="lblInfo">
+      <property name="spacing">
+       <number>3</number>
+      </property>
+      <item row="1" column="0" colspan="2">
+       <widget class="QPushButton" name="btnJob">
         <property name="text">
-         <string/>
+         <string>Create Job</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QLineEdit" name="txtJobName">
+        <property name="text">
+         <string>job0001</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="0">
+       <widget class="QLabel" name="lblJobName">
+        <property name="text">
+         <string>Name:   </string>
         </property>
        </widget>
       </item>

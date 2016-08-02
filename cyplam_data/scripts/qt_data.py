@@ -15,6 +15,9 @@ from mashes_measures.msg import MsgStatus
 from data.move_data import move_file
 from data.move_data import test_connection
 
+HOME = os.path.expanduser('~')
+DIRDATA = 'bag_data'
+DIRDEST = '/home/ryco/data/'
 
 TOPICS = ['/tachyon/image',
           '/tachyon/geometry',
@@ -32,46 +35,53 @@ class QtData(QtGui.QWidget):
         path = rospkg.RosPack().get_path('cyplam_data')
         loadUi(os.path.join(path, 'resources', 'data.ui'), self)
 
+        rospy.Subscriber(
+            '/supervisor/status', MsgStatus, self.cbStatus, queue_size=1)
+
         self.btnConnect.clicked.connect(self.btnConnectClicked)
         self.btnJob.clicked.connect(self.btnJobClicked)
         self.btnPredict.clicked.connect(self.btnPredictClicked)
         self.btnRecord.clicked.connect(self.btnRecordClicked)
         self.btnTransfer.clicked.connect(self.btnTransferClicked)
 
-        home = os.path.expanduser('~')
-        self.dirdata = os.path.join(home, 'bag_data')
-        if not os.path.exists(self.dirdata):
-            os.mkdir(self.dirdata)
+        dirdata = os.path.join(HOME, DIRDATA)
+        if not os.path.exists(dirdata):
+            os.mkdir(dirdata)
 
+        self.job = ''
         self.name = ''
-        self.job = None
         self.status = False
         self.running = False
         self.process = QtCore.QProcess(self)
 
-        rospy.Subscriber(
-            '/supervisor/status', MsgStatus, self.cbStatus, queue_size=1)
-
         if rospy.has_param('/material'):
             self.setMaterialParameters(rospy.get_param('/material'))
 
+        self.btnJobClicked()
+
     def btnConnectClicked(self):
-        self.lblInfo.setText('Trying to connect')
-        accessfile = os.path.join(self.dirdata, 'access.yalm')
+        self.txtOutput.textCursor().insertText('> trying to connect.\n')
+        accessfile = os.path.join(HOME, DIRDATA, 'access.yalm')
         if test_connection(accessfile):
-            self.lblInfo.setText('Connected')
+            self.txtOutput.textCursor().insertText('> connected.\n')
             self.btnTransfer.setEnabled(True)
         else:
-            self.lblInfo.setText('Not connected')
+            self.txtOutput.textCursor().insertText('> not connected.\n')
             self.btnTransfer.setEnabled(False)
 
     def btnJobClicked(self):
         self.job = self.txtJobName.text()
-        dirname = os.path.join(self.dirdata, self.job)
+        dirname = os.path.join(HOME, DIRDATA, self.job)
         if not os.path.exists(dirname):
             os.mkdir(dirname)
-        if self.parent:
-            self.parent.workdir = dirname
+            self.dirdata = dirname
+        else:
+            try:
+                name, num = self.job[:-4], int(self.job[-4:]) + 1
+            except:
+                name, num = self.job, 1
+            self.txtJobName.setText('%s%04i' % (name, num))
+            self.btnJobClicked()
 
     def btnPredictClicked(self):
         param = self.getMaterialParameters()
@@ -89,9 +99,7 @@ class QtData(QtGui.QWidget):
     def btnRecordClicked(self):
         self.running = not self.running
         if self.running:
-            self.btnRecord.setText('Ready for Data')
-            [self.txtOutput.textCursor().insertText(
-                str(rospy.get_param(param))+'\n') for param in PARAMS]
+            self.btnRecord.setText('Recording...')
             self.txtOutput.textCursor().insertText('> ready for data.\n')
         else:
             self.btnRecord.setText('Record Data')
@@ -102,12 +110,14 @@ class QtData(QtGui.QWidget):
         params = {param[1:]: rospy.get_param(param) for param in PARAMS}
         with open(os.path.join(self.dirdata, filename), 'w') as outfile:
             outfile.write(yaml.dump(params, default_flow_style=False))
+        self.txtOutput.textCursor().insertText(str(params))
 
     def dataReady(self):
         cursor = self.txtOutput.textCursor()
         cursor.movePosition(cursor.End)
         text = str(self.process.readAll())
         cursor.insertText(text)
+        self.txtOutput.moveCursor(QtGui.QTextCursor.End)
         self.txtOutput.ensureCursorVisible()
 
     def callProgram(self):
@@ -121,37 +131,38 @@ class QtData(QtGui.QWidget):
         self.process.waitForFinished()
 
     def cbStatus(self, msg_status):
-        status = msg_status.running
-        if not self.status and status:
-            if self.running:
+        if self.running:
+            status = msg_status.running
+            if not self.status and status:
                 self.name = time.strftime('%Y%m%d-%H%M%S')
                 self.saveParameters()
-                self.btnRecord.setText('Recording...')
                 self.txtOutput.textCursor().insertText(
                     '> recording topics:\n%s\n' % '\n'.join(TOPICS))
                 self.callProgram()
-        elif self.status and not status:
-            self.killProgram()
-            self.btnRecord.setText('Record Data')
-            self.txtOutput.textCursor().insertText(
-                '> %s recorded.\n' % self.name)
-        self.status = status
+            elif self.status and not status:
+                self.killProgram()
+                self.txtOutput.textCursor().insertText(
+                    '> %s recorded.\n' % self.name)
+            self.status = status
 
     def btnTransferClicked(self):
-        accessfile = os.path.join(self.dirdata, 'access.yalm')
+        accessfile = os.path.join(HOME, DIRDATA, 'access.yalm')
         filename = 'data_' + self.name + '.bag'
         if not self.name == '':
-            self.lblInfo.setText('Trying to transfer %s' % filename)
             self.btnTransfer.setEnabled(False)
             try:
-                move_file(accessfile, os.path.join(self.dirdata, filename), '/home/ryco/data/')
+                self.txtOutput.textCursor().insertText(
+                    '> trying to transfer file %s.\n' % filename)
+                move_file(accessfile,
+                          os.path.join(self.dirdata, filename), DIRDEST)
+                self.txtOutput.textCursor().insertText(
+                    '> file %s transfered.\n' % filename)
             except:
-                self.lblInfo.setText('Transference failed')
+                self.txtOutput.textCursor().insertText(
+                    '> transference failed.\n')
             self.btnTransfer.setEnabled(True)
-            self.txtOutput.textCursor().insertText('> %s transfered.\n' % filename)
-            self.lblInfo.setText('File %s transfered' % filename)
         else:
-            self.lblInfo.setText('No file to transfer')
+            self.txtOutput.textCursor().insertText('> transference failed.\n')
 
 
 if __name__ == "__main__":

@@ -5,9 +5,6 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
-from mashes_measures.msg import MsgGeometry
-from cladplus_control.msg import MsgPower
-
 from cv_bridge import CvBridge
 
 bridge = CvBridge()
@@ -18,7 +15,8 @@ def serialize_frame(frame, encode='.tiff'):
 
 
 def deserialize_frame(string):
-    return cv2.imdecode(np.fromstring(string, np.uint8), cv2.CV_LOAD_IMAGE_UNCHANGED)
+    return cv2.imdecode(
+        np.fromstring(string, np.uint8), cv2.CV_LOAD_IMAGE_UNCHANGED)
 
 
 def read_frames(frames):
