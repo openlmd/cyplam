@@ -1,0 +1,3 @@
+powder: {shield: 10.0, carrier: 5.0, stirrer: 20.0, turntable: 4.0}
+process: {speed: 8, power: 1000, focus: 0}
+material: {base: 'steel', powder: '00001'}

@@ -1,0 +1,16 @@
+<launch>
+    <arg name="sim" default="false" />
+
+    <rosparam command="load" file="$(find cyplam_robviz)/config/params.yaml" />
+
+    <include file="$(find cyplam_workcell)/launch/workcell.launch">
+      <arg name="gui" value="false" />
+      <arg name="sim" value="$(arg sim)" />
+    </include>
+
+    <include file="$(find mashes_measures)/launch/measures.launch">
+      <arg name="gui" value="false" />
+    </include>
+
+    <node name="robviz" pkg="cyplam_robviz" type="robviz.py"/>
+</launch>
