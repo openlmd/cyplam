@@ -30,7 +30,7 @@ manufacturing of previous parts.
 
 This work is been supported by the European Commission through the research
 project "Factories of the Future Resources, Technology, Infrastructure and
-Services for Simulation and Modelling 2 (FORTISSIMO 2)".
-<!-- , FP7-2013-NMP-ICT-FOF - Grant Agreement Nº 609046. -->
+Services for Simulation and Modelling 2 (FORTISSIMO 2)", H2020 - Grant
+Agreement Nº 680481.
 
 [http://www.fortissimo-project.eu/](http://www.fortissimo-project.eu/)
