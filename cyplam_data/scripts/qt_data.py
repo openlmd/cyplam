@@ -117,8 +117,6 @@ class QtData(QtGui.QWidget):
         cursor.movePosition(cursor.End)
         text = str(self.process.readAll())
         cursor.insertText(text)
-        self.txtOutput.moveCursor(QtGui.QTextCursor.End)
-        self.txtOutput.ensureCursorVisible()
 
     def callProgram(self):
         os.chdir(self.dirdata)
@@ -144,6 +142,8 @@ class QtData(QtGui.QWidget):
                 self.txtOutput.textCursor().insertText(
                     '> %s recorded.\n' % self.name)
             self.status = status
+            self.txtOutput.moveCursor(QtGui.QTextCursor.End)
+            self.txtOutput.ensureCursorVisible()
 
     def btnTransferClicked(self):
         accessfile = os.path.join(HOME, DIRDATA, 'access.yalm')

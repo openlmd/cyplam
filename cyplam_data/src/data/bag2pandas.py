@@ -5,6 +5,8 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
+from kinematics import Kinematics
+
 from cv_bridge import CvBridge
 
 bridge = CvBridge()
@@ -59,13 +61,60 @@ def read_topic_img(bag, topic):
     return images
 
 
+def transform_joints(joints):
+    kdl = Kinematics()
+    kdl.set_kinematics('base_link', 'tcp0')
+    poses = [kdl.get_pose(jnts) for jnts in joints]
+    return poses
+
+
+def read_topic_joints(bag, topic='/joint_states'):
+    data_dic = {}
+    for idx, (topic, msg, mt) in enumerate(bag.read_messages(topics=topic)):
+        if idx == 0:
+            slots = msg.__slots__
+            columns = ['time', 'position']
+            for column in columns:
+                data_dic[column] = []
+        for slot in slots:
+            if slot == 'header':
+                data_dic['time'].append(msg.header.stamp.to_sec())
+            if slot == 'position':
+                data_dic[slot].append(getattr(msg, slot))
+    data_dic['position'] = transform_joints(data_dic['position'])
+    data = pd.DataFrame(data_dic)
+    return data
+
+
 def merge_topic_data(data1, data2):
     data = pd.merge(data1, data2, how='outer', on='time', sort=True)
     #control = pd.concat([self.geometry, self.control], axis=1)
     return data
 
 
+def read_topics(topics):
+    data = {}
+    for topic in topics:
+        names = topic.split('/')[1:]
+        if names[-1] == 'image':
+            dat = read_topic_img(bag, topic)
+            if names[-2] in data.keys():
+                data[names[-2]] = merge_topic_data(data[names[-2]], dat)
+            else:
+                data[names[-2]] = dat
+        elif names[-1] == 'joint_states':
+            data['robot'] = read_topic_joints(bag, topic)
+        elif len(names) > 1:
+            dat = read_topic_data(bag, topic)
+            if names[-2] in data.keys():
+                data[names[-2]] = merge_topic_data(data[names[-2]], dat)
+            else:
+                data[names[-2]] = dat
+    return data
+
+
 if __name__ == "__main__":
+    import os
     import glob
     import argparse
 
@@ -80,7 +129,7 @@ if __name__ == "__main__":
     if filename is None:
         filenames = sorted(glob.glob('/home/jorge/data/*.bag'))
         filename = filenames[-1]
-    filename = '/home/jorge/data/data_20160721-003440.bag'
+        filename = '/home/jorge/data/20_2000.bag'
     print filename
 
     if args.topics:
@@ -91,28 +140,36 @@ if __name__ == "__main__":
 
     # Get dataframes
     bag = rosbag.Bag(filename)
-    images = read_topic_img(bag, '/tachyon/image')
+    topics = read_topic_list(bag)
+    data = read_topics(topics)
     #geometry = read_topic_data(bag, '/tachyon/geometry')
     #control = read_topic_data(bag, '/control/power')
-    camera = read_topic_img(bag, '/camera/image')
-    joints = read_topic_data(bag, '/joint_states')
     bag.close()
+
+    print 'Data:', data.keys()
+
+    if 'control' in data.keys() and 'tachyon' in data.keys():
+        data['tachyon'] = merge_topic_data(data['tachyon'], data['control'])
+        data['tachyon'] = data['tachyon'].rename(columns={'value': 'power'})
+        del data['control']
+
+    # Measures, merge dataframes example
+    #measures = merge_topic_data(geometry, control)
+    #measures = measures.rename(columns={'value': 'power'})
+    #measures.columns
+    measures = data['tachyon']
 
     # TODO: Read all the topics as dataframes and merge corresponding subtopics
     # /tachyon/image + /tachyon/geometry = /tachyon (dataframe)
-
-    # Measures, merge dataframes example
-    #measures = merge_topic_data(images, geometry)
-    #measures = merge_topic_data(measures, control)
-    #measures = measures.rename(columns={'value': 'power'})
-    #measures.columns
-    measures = images
+    # merge_dataframes
 
     # Save HDF5 file
-    images.to_hdf('foo.h5', 'images')
-    camera.to_hdf('foo.h5', 'camera')
-    joints.to_hdf('foo.h5', 'joints')
-    # pd.read_hdf('foo.h5','geometry')
+    filename += '.h5'
+    if os.path.isfile(filename):
+        os.remove(filename)
+    for name, dat in data.iteritems():
+        dat.to_hdf(filename, name)
+    # pd.read_hdf(filename,'geometry')
 
     # <codecell>
     img_str = measures.loc[69]['frame']
@@ -164,9 +221,10 @@ if __name__ == "__main__":
     meas = measures.loc[idx0:idx1]
     time = np.array(meas['time'])
     plt.subplot(211)
-    measures.plot(x='time', y='minor_axis', xlim=(time[0], time[-1]), ylim=(0, 5))
+    measures.plot(x='time', y='minor_axis', xlim=(time[0], time[-1]), ylim=(0, 5), color='blue')
     plt.subplot(212)
-    measures.plot(x='time', y='power', xlim=(time[0], time[-1]), ylim=(0, 1500))
+    measures.plot(x='time', y='power', xlim=(time[0], time[-1]), ylim=(0, 1500), color='red')
+    plt.show()
 
     # <codecell>
     mean = meas['minor_axis'].mean()
