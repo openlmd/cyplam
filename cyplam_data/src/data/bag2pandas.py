@@ -1,3 +1,4 @@
+import gc
 import cv2
 import rosbag
 import numpy as np
@@ -79,7 +80,9 @@ def read_topic_joints(bag, topic='/joint_states'):
                 data_dic['time'].append(msg.header.stamp.to_sec())
             if slot == 'position':
                 data_dic[slot].append(getattr(msg, slot))
-    data_dic['position'] = transform_joints(data_dic['position'])
+    poses = transform_joints(data_dic['position'])
+    data_dic['position'] = [pose[0] for pose in poses]
+    data_dic['orientation'] = [pose[1] for pose in poses]
     data = pd.DataFrame(data_dic)
     return data
 
@@ -120,6 +123,8 @@ def write_hdf5(filename, data, keys=None):
         keys = data.keys()
     for key in keys:
         store.put(key, data[key])
+        gc.collect()
+        print gc.collect()
     store.close()
 
 
@@ -135,24 +140,28 @@ def read_hdf5(filename, keys=None):
 
 
 if __name__ == "__main__":
+    import os
     import argparse
 
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        '-b', '--bag', type=str, default=None, help='input bag file')
+        '-b', '--bag', type=str, default=None, help='bag filename')
     parser.add_argument(
-        '-t', '--topics', help='list of topics',  action='store_true')
+        '-t', '--topics', type=str, default=None, nargs='+', help='topics')
+    parser.add_argument(
+        '-i', '--info', help='list of topics',  action='store_true')
     args = parser.parse_args()
 
     filename = args.bag
+    topics = args.topics
 
-    if args.topics:
+    if args.info:
         bag = rosbag.Bag(filename)
         topics = read_topic_list(bag)
         bag.close()
         print 'Topics:', topics
 
-    data = read_bag_data(filename)
+    data = read_bag_data(filename, topics)
     #geometry = read_bag_data(filename, ['/tachyon/geometry'])
 
     # Merges control data in tachyon dataframe and rename value to power
@@ -161,6 +170,7 @@ if __name__ == "__main__":
         data['tachyon'] = data['tachyon'].rename(columns={'value': 'power'})
         del data['control']
 
-    filename += '.h5'
+    name, ext = os.path.splitext(filename)
+    filename = name + '.h5'
     write_hdf5(filename, data)
-    data = read_hdf5(filename)
+    #data = read_hdf5(filename)
