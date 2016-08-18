@@ -9,13 +9,13 @@ from kinematics import Kinematics
 from cv_bridge import CvBridge
 
 
-def serialize_frame(frame, encode='.tiff'):
+def serialize_frame(frame, encode='*.png'):
     return cv2.imencode(encode, frame)[1].tostring()
 
 
 def deserialize_frame(string):
     return cv2.imdecode(
-        np.fromstring(string, np.uint8), cv2.CV_LOAD_IMAGE_UNCHANGED)
+        np.fromstring(string, dtype=np.uint8), cv2.CV_LOAD_IMAGE_UNCHANGED)
 
 
 def read_topic_list(bag):
@@ -118,13 +118,15 @@ def read_bag_data(filename, topics=None):
 
 
 def write_hdf5(filename, data, keys=None):
-    store = pd.HDFStore(filename)
+    store = pd.HDFStore(filename, complevel=9, complib='blosc')
+    #store = pd.HDFStore(filename, complevel=1, complib="zlib")
     if keys is None:
         keys = data.keys()
     for key in keys:
-        store.put(key, data[key])
-        gc.collect()
-        print gc.collect()
+        store.put(key, data[key], format='fixed', append=False)
+        #store.put(key, data[key], format='table', append=False)
+        #gc.collect()
+        #print gc.collect()
     store.close()
 
 

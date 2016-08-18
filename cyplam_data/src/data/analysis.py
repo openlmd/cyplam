@@ -6,13 +6,13 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
 
-def serialize_frame(frame, encode='.tiff'):
-    return cv2.imencode(encode, frame)[1].tostring()
+def serialize_frame(frame, encode='*.png'):
+    return cv2.imencode(encode, frame)[1].tostring(None)
 
 
 def deserialize_frame(string):
     return cv2.imdecode(
-        np.fromstring(string, np.uint8), cv2.CV_LOAD_IMAGE_UNCHANGED)
+        np.fromstring(string, dtype=np.uint8), cv2.CV_LOAD_IMAGE_UNCHANGED)
 
 
 def read_frames(frames):
@@ -20,11 +20,11 @@ def read_frames(frames):
 
 
 def write_hdf5(filename, data, keys=None):
-    store = pd.HDFStore(filename)
+    store = pd.HDFStore(filename, complevel=9, complib='blosc')
     if keys is None:
         keys = data.keys()
     for key in keys:
-        store.put(key, data[key])
+        store.put(key, data[key], format='table', append=False)
     store.close()
 
 
@@ -79,8 +79,8 @@ if __name__ == "__main__":
     data = read_hdf5(filename, tables)
 
     if 'robot' in data.keys():
-        from measures.velocity import Velocity
         robot = data['robot']
+        from measures.velocity import Velocity
         velocity = Velocity()
         speeds = [velocity.instantaneous(
             robot.time[k], np.array(robot.position[k]))[0]
@@ -94,54 +94,76 @@ if __name__ == "__main__":
         plt.show()
 
     if 'tachyon' in data.keys():
-        img = deserialize_frame(data['tachyon'].frame[69])
-        plot_image(img)
-        # Show image as 3D surface
-        plot_image3d(img)
+        tachyon = data['tachyon']
+        tachyon = tachyon[tachyon.frame.notnull()]
+        #frames = read_frames(tachyon.frame)
 
-        measures = data['tachyon'][data['tachyon'].frame.notnull()]
-        frames = read_frames(measures['frame'])
-        plot_histogram(frames[50])
+        if 'minor_axis' in tachyon.columns:
+            idx = tachyon.index[tachyon['minor_axis'] > 0]
+            idx0, idx1 = idx[0], idx[-1]
+            time0 = tachyon.time[idx0]
+            time1 = tachyon.time[idx1]
+            print idx0, idx1, time0, time1
+            idx = tachyon.index[tachyon.time < time0-1]
+            idx0 = idx[-1]
+            idx = tachyon.index[tachyon.time > time1+1]
+            idx1 = idx[0]
+            print idx0, idx1
+            if idx0 < 0:
+                idx0 = 0
+            if idx1 > len(tachyon):
+                idx1 = len(tachyon)
+            meas = tachyon.loc[idx0:idx1]
+            time = np.array(meas['time'])
 
-        # Time checking
-        N = len(measures['power'])
-        print measures.loc[N-10:N-1]['time']
-        time = np.array(measures['time'])
-        print np.isclose(time[1:], time[:-1], atol=1e-03, rtol=0)
+            # Find tracks
+            tachyonw = tachyon[tachyon.minor_axis.notnull()]
+            laser = np.array(tachyonw['minor_axis'] > 0)
+            lasernr = np.append(np.bitwise_not(laser[0]), np.bitwise_not(laser[:-1]))
+            lasernl = np.append(np.bitwise_not(laser[1:]), np.bitwise_not(laser[-1]))
+            laser_on = np.bitwise_and(laser, lasernr)
+            laser_off = np.bitwise_and(laser, lasernl)
+            laser_on_idx = tachyonw.index[laser_on]
+            laser_off_idx = tachyonw.index[laser_off]
+            print laser_on_idx, laser_off_idx
+            plt.figure()
+            plt.plot(laser_on)
+            plt.plot(laser_off)
+            plt.show()
 
-        # Plot width and power
-        measures['time'] = measures['time'] - measures['time'][0]
-        measures = measures[measures['power'].notnull()]
-        plt.figure()
-        plt.subplot(211)
-        measures.plot(x='time', y='minor_axis', color='blue')
-        plt.subplot(212)
-        measures.plot(x='time', y='power', color='red')
-        plt.show()
+            # First track geometry calculation
+            from measures.geometry import Geometry
+            geometry = Geometry(200)
+            ellipses = []
+            for frame in tachyon.frame[laser_on_idx[0]:laser_off_idx[0]]:
+                img = deserialize_frame(frame)
+                ellipse = geometry.find_geometry(img)
+                ellipses.append(np.array(ellipse))
+            ellipses = np.array(ellipses)
+            widths = np.array([axis[1]for axis in ellipses[:, 1]])
+            plt.figure()
+            plt.subplot(211)
+            plt.plot(widths)
+            plt.subplot(212)
+            plt.plot(widths * 0.375)
+            plt.show()
 
-        # <codecell>
-        idx = measures.index[measures['minor_axis'] > 0]
-        idx0, idx1 = idx[0], idx[-1]
-        time0 = measures['time'][idx0]
-        time1 = measures['time'][idx1]
-        print idx0, idx1, time0, time1
-        idx = measures.index[measures['time'] < time0-1]
-        idx0 = idx[-1]
-        idx = measures.index[measures['time'] > time1+1]
-        idx1 = idx[0]
-        print idx0, idx1
-        if idx0 < 0:
-            idx0 = 0
-        if idx1 > N:
-            idx1 = N
-        meas = measures.loc[idx0:idx1]
-        time = np.array(meas['time'])
+            plot_image(geometry.draw_geometry(img, ellipse))
+            plot_image3d(img)  # Show image as 3D surface
+            plot_histogram(img)
 
-        plt.figure()
-        plt.subplot(211)
-        measures.plot(x='time', y='minor_axis',
-                      xlim=(time[0], time[-1]), ylim=(0, 5), color='blue')
-        plt.subplot(212)
-        measures.plot(x='time', y='power',
-                      xlim=(time[0], time[-1]), ylim=(0, 1500), color='red')
-        plt.show()
+            # N = len(measures['power'])
+            # print measures.loc[N-10:N-1]['time']
+            # time = np.array(measures['time'])
+            # print np.isclose(time[1:], time[:-1], atol=1e-03, rtol=0)
+            tachyonp = tachyon[tachyon.power.notnull()]
+            #tachyon.time = tachyon.time - tachyon.time[0]
+
+            plt.figure()
+            plt.subplot(211)
+            tachyonp.plot(x='time', y='minor_axis',
+                          xlim=(time[0], time[-1]), ylim=(0, 5), color='blue')
+            plt.subplot(212)
+            tachyonp.plot(x='time', y='power',
+                          xlim=(time[0], time[-1]), ylim=(0, 1500), color='red')
+            plt.show()
