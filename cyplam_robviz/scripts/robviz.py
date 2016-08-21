@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import os
+import rviz
 import rospy
 import rospkg
 
@@ -7,10 +8,6 @@ from python_qt_binding import loadUi
 from python_qt_binding import QtGui
 from python_qt_binding import QtCore
 
-import tf
-import rviz
-import numpy as np
-from mashes_measures.msg import MsgVelocity
 from mashes_measures.msg import MsgStatus
 
 from qt_data import QtData
@@ -99,10 +96,13 @@ class Robviz(QtGui.QMainWindow):
         super(Robviz, self).__init__()
         loadUi(os.path.join(path, 'resources', 'robviz.ui'), self)
 
+        rospy.Subscriber(
+            '/supervisor/status', MsgStatus, self.cbStatus, queue_size=1)
+
         self.boxPlot.addWidget(MyViz())
 
         home = os.path.expanduser('~')
-        self.workdir = os.path.join(home, 'bag_data/')
+        self.workdir = os.path.join(home, 'data')
 
         self.qtData = QtData()
         self.qtParam = QtParam()
@@ -110,31 +110,43 @@ class Robviz(QtGui.QMainWindow):
         self.tabWidget.addTab(self.qtData, 'Data')
         self.tabWidget.addTab(self.qtParam, 'Parameters')
 
-        #self.qtData.accepted.connect(self.qtPartAccepted)
-
+        self.btnQuit.setIcon(QtGui.QIcon.fromTheme('application-exit'))
         self.btnQuit.clicked.connect(self.btnQuitClicked)
 
-        rospy.Subscriber('/velocity', MsgVelocity, self.cb_velocity, queue_size=1)
-        rospy.Subscriber('/supervisor/status', MsgStatus, self.cb_status, queue_size=1)
+        self.speed = 0
+        self.power = 0
+        self.running = False
+        self.laser_on = False
 
-    def cb_velocity(self, msg_velocity):
-        self.lblSpeed.setText("Speed: %.1f mm/s" % (1000 * msg_velocity.speed))
+        tmrInfo = QtCore.QTimer(self)
+        tmrInfo.timeout.connect(self.updateStatus)
+        tmrInfo.start(100)
 
-    def cb_status(self, msg_status):
-        if msg_status.laser_on:
-            txt_laser = 'Laser ON'
-            # self.lblLaser.setStyleSheet(
-            #     "background-color: rgb(255, 255, 0); color: rgb(0, 0, 0);")
+    def cbStatus(self, msg_status):
+        self.running = msg_status.running
+        self.laser_on = msg_status.laser_on
+        self.speed = msg_status.speed
+        self.power = msg_status.power
+
+    def updateStatus(self):
+        self.lblSpeed.setText("Speed: %.1f mm/s" % (self.speed))
+        self.lblPower.setText("Power: %i W" % (self.power))
+        if self.running:
+            self.lblStatus.setText('Running')
+            self.lblStatus.setStyleSheet(
+                "background-color: rgb(0, 255, 0); color: rgb(0, 0, 0);")
         else:
-            txt_laser = 'Laser OFF'
-            # self.lblLaser.setStyleSheet(
-            #     "background-color: rgb(255, 255, 0); color: rgb(0, 0, 0);")
-        self.lblLaser.setText(txt_laser)
-        if msg_status.running:
-            txt_status = 'Running'
+            self.lblStatus.setText('Stopped')
+            self.lblStatus.setStyleSheet(
+                "background-color: rgb(255, 0, 0); color: rgb(0, 0, 0);")
+        if self.laser_on:
+            self.lblLaser.setText('Laser ON')
+            self.lblLaser.setStyleSheet(
+                "background-color: rgb(255, 255, 0); color: rgb(0, 0, 0);")
         else:
-            txt_status = 'Stopped'
-        self.lblStatus.setText(txt_status)
+            self.lblLaser.setText('Laser OFF')
+            self.lblLaser.setStyleSheet(
+                "background-color: rgb(0, 0, 255); color: rgb(0, 0, 0);")
 
     def btnQuitClicked(self):
         QtCore.QCoreApplication.instance().quit()
