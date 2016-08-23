@@ -5,6 +5,8 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
+from measures.velocity import Velocity
+
 
 def serialize_frame(frame, encode='*.png'):
     return cv2.imencode(encode, frame)[1].tostring(None)
@@ -64,6 +66,23 @@ def plot_image3d(img):
     plt.show()
 
 
+def calculate_velocity(time, position):
+    velocity = Velocity()
+    data = {'speed': [], 'velocity': [], 'running': []}
+    for k in range(len(position)):
+        speed, vel = velocity.instantaneous(time[k], np.array(position[k]))
+        data['speed'].append(speed)
+        data['velocity'].append(vel)
+        data['running'].append(speed > 0.0005)
+    return data
+
+
+def append_data(dataframe, data):
+    for key, value in data.iteritems():
+        dataframe[key] = pd.Series(value, index=dataframe.index)
+    return dataframe
+
+
 if __name__ == "__main__":
     import argparse
 
@@ -80,17 +99,14 @@ if __name__ == "__main__":
 
     if 'robot' in data.keys():
         robot = data['robot']
-        from measures.velocity import Velocity
-        velocity = Velocity()
-        speeds = [velocity.instantaneous(
-            robot.time[k], np.array(robot.position[k]))[0]
-            for k in range(len(robot))]
-        running = [speed > 0.0005 for speed in speeds]
+        velocity = calculate_velocity(robot.time, robot.position)
+        data['robot'] = append_data(robot, velocity)
+
         plt.figure()
         plt.subplot(211)
-        plt.plot(speeds)
+        plt.plot(velocity['speed'])
         plt.subplot(212)
-        plt.plot(running)
+        plt.plot(velocity['running'])
         plt.show()
 
     if 'tachyon' in data.keys():
