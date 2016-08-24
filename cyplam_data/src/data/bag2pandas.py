@@ -92,6 +92,7 @@ def merge_topic_data(data1, data2):
     return data
 
 
+# Read all the topics as dataframes and merge corresponding subtopics
 def read_topics(topics):
     data = {}
     for topic in topics:
@@ -159,10 +160,6 @@ if __name__ == "__main__":
     #measures.columns
     measures = data['tachyon']
 
-    # TODO: Read all the topics as dataframes and merge corresponding subtopics
-    # /tachyon/image + /tachyon/geometry = /tachyon (dataframe)
-    # merge_dataframes
-
     # Save HDF5 file
     filename += '.h5'
     if os.path.isfile(filename):
@@ -170,6 +167,17 @@ if __name__ == "__main__":
     for name, dat in data.iteritems():
         dat.to_hdf(filename, name)
     # pd.read_hdf(filename,'geometry')
+
+    hdf = pd.HDFStore(filename)
+    tables = hdf.keys()
+    print 'Tables:', tables
+    hdf.close()
+
+    data = {}
+    for table in tables:
+        name = table.split('/')[-1]
+        data[name] = pd.read_hdf(filename, table)
+    print 'Data keys:', data.keys()
 
     # <codecell>
     img_str = measures.loc[69]['frame']
