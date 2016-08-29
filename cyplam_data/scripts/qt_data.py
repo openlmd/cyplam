@@ -73,7 +73,6 @@ class QtData(QtGui.QWidget):
         self.job = self.txtJobName.text()
         dirname = os.path.join(HOME, DIRDATA, self.job)
         if not os.path.exists(dirname):
-            os.mkdir(dirname)
             self.dirdata = dirname
         else:
             try:
@@ -100,6 +99,8 @@ class QtData(QtGui.QWidget):
         self.running = not self.running
         if self.running:
             self.btnRecord.setText('Recording...')
+            if not os.path.exists(self.dirdata):
+                os.mkdir(self.dirdata)
             self.txtOutput.textCursor().insertText('> ready for data.\n')
         else:
             self.btnRecord.setText('Record Data')

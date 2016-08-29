@@ -6,9 +6,6 @@ import rosbag
 from cv_bridge import CvBridge
 
 
-bridge = CvBridge()
-
-
 def extract(filename):
     path = os.getcwd()
     name = os.path.splitext(filename)[0]
@@ -50,6 +47,7 @@ def extract_data(bag, topic, path_dir):
     filename = os.path.join(path_dir, topic.split('/')[-1] + '.txt')
     print "[OK] Printing %s" % topic
     print "[OK] Output file will be called %s." % filename
+    bridge = CvBridge()
     outputFh = open(filename, "w")
     for topic, msg, t in bag.read_messages(topics=topic):
         try:
@@ -119,5 +117,4 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     filename = args.bag
-
     extract(filename)
