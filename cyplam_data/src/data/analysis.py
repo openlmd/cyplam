@@ -6,7 +6,8 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
 from measures.velocity import Velocity
-
+from measures.geometry import Geometry
+from otsu import Otsu
 
 def serialize_frame(frame, encode='*.png'):
     return cv2.imencode(encode, frame)[1].tostring(None)
@@ -83,6 +84,79 @@ def append_data(dataframe, data):
     return dataframe
 
 
+def find_geometry(tachyon):
+    geometry = Geometry(127)
+    ellipses = []
+    for frame in tachyon.frame:
+        img = deserialize_frame(frame)
+        ellipse = geometry.find_geometry(img)
+        ellipses.append(np.array(ellipse))
+    ellipses = np.array(ellipses)
+    widths = np.array([axis[1]for axis in ellipses[:, 1]])
+    plt.figure()
+    plt.subplot(211)
+    plt.plot(widths)
+    plt.subplot(212)
+    plt.plot(widths * 0.375)
+    plt.show()
+
+    # plot_image(geometry.draw_geometry(img, ellipse))
+    # plot_image3d(img)  # Show image as 3D surface
+    # plot_histogram(img)
+
+
+def find_track(tachyon):
+    tachyonw = tachyon[tachyon.minor_axis.notnull()]
+    laser = np.array(tachyonw['minor_axis'] > 0)
+    lasernr = np.append(np.bitwise_not(laser[0]), np.bitwise_not(laser[:-1]))
+    lasernl = np.append(np.bitwise_not(laser[1:]), np.bitwise_not(laser[-1]))
+    laser_on = np.bitwise_and(laser, lasernr)
+    laser_off = np.bitwise_and(laser, lasernl)
+    laser_on_idx = tachyonw.iandex[laser_on]
+    laser_off_idx = tachyonw.index[laser_off]
+    print laser_on_idx, laser_off_idx
+    plt.figure()
+    plt.plot(laser_on)
+    plt.plot(laser_off)
+    plt.show()
+
+
+def max_evolution(tachyon):
+    maxims = []
+    for frame in tachyon.frame:
+        img = deserialize_frame(frame)
+        maxims.append(img.max())
+    maxims = np.array(maxims)
+    print maxims.max()
+    plt.figure()
+    plt.plot(maxims)
+    plt.show()
+
+
+def center_evolution(tachyon):
+    back = []
+    for frame in tachyon.frame:
+        img = deserialize_frame(frame)
+        back.append(np.mean(img[15:18, 11:13]))
+    back = np.array(back)
+    print back.max()
+    plt.figure()
+    plt.plot(back)
+    plt.show()
+
+def back_evolution(tachyon):
+    back = []
+    for frame in tachyon.frame:
+        img = deserialize_frame(frame)
+        back.append(np.mean(img[27, 27]))
+    back = np.array(back)
+    print back.max()
+    plt.figure()
+    plt.plot(back)
+    plt.show()
+
+
+
 if __name__ == "__main__":
     import argparse
 
@@ -131,42 +205,7 @@ if __name__ == "__main__":
                 idx1 = len(tachyon)
             meas = tachyon.loc[idx0:idx1]
             time = np.array(meas['time'])
-
-            # Find tracks
-            tachyonw = tachyon[tachyon.minor_axis.notnull()]
-            laser = np.array(tachyonw['minor_axis'] > 0)
-            lasernr = np.append(np.bitwise_not(laser[0]), np.bitwise_not(laser[:-1]))
-            lasernl = np.append(np.bitwise_not(laser[1:]), np.bitwise_not(laser[-1]))
-            laser_on = np.bitwise_and(laser, lasernr)
-            laser_off = np.bitwise_and(laser, lasernl)
-            laser_on_idx = tachyonw.index[laser_on]
-            laser_off_idx = tachyonw.index[laser_off]
-            print laser_on_idx, laser_off_idx
-            plt.figure()
-            plt.plot(laser_on)
-            plt.plot(laser_off)
-            plt.show()
-
-            # First track geometry calculation
-            from measures.geometry import Geometry
-            geometry = Geometry(200)
-            ellipses = []
-            for frame in tachyon.frame[laser_on_idx[0]:laser_off_idx[0]]:
-                img = deserialize_frame(frame)
-                ellipse = geometry.find_geometry(img)
-                ellipses.append(np.array(ellipse))
-            ellipses = np.array(ellipses)
-            widths = np.array([axis[1]for axis in ellipses[:, 1]])
-            plt.figure()
-            plt.subplot(211)
-            plt.plot(widths)
-            plt.subplot(212)
-            plt.plot(widths * 0.375)
-            plt.show()
-
-            plot_image(geometry.draw_geometry(img, ellipse))
-            plot_image3d(img)  # Show image as 3D surface
-            plot_histogram(img)
+            find_track(tachyon)
 
             # N = len(measures['power'])
             # print measures.loc[N-10:N-1]['time']
@@ -183,3 +222,5 @@ if __name__ == "__main__":
             tachyonp.plot(x='time', y='power',
                           xlim=(time[0], time[-1]), ylim=(0, 1500), color='red')
             plt.show()
+        else:
+            find_geometry(tachyon)
