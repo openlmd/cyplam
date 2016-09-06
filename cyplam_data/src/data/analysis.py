@@ -104,6 +104,7 @@ def find_geometry(tachyon):
     # plot_image3d(img)  # Show image as 3D surface
     # plot_histogram(img)
 
+
 def draw_temperature(tachyon):
     geometry = Geometry(200)
     ellipses = []
@@ -123,6 +124,7 @@ def draw_temperature(tachyon):
     plt.subplot(212)
     plt.plot(temp)
     plt.show()
+
 
 def find_track(tachyon):
     tachyonw = tachyon[tachyon.minor_axis.notnull()]
