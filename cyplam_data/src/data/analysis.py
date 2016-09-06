@@ -85,7 +85,7 @@ def append_data(dataframe, data):
 
 
 def find_geometry(tachyon):
-    geometry = Geometry(127)
+    geometry = Geometry(200)
     ellipses = []
     for frame in tachyon.frame:
         img = deserialize_frame(frame)
@@ -97,13 +97,32 @@ def find_geometry(tachyon):
     plt.subplot(211)
     plt.plot(widths)
     plt.subplot(212)
-    plt.plot(widths * 0.375)
+    plt.plot(widths * 2.66666667)
     plt.show()
 
     # plot_image(geometry.draw_geometry(img, ellipse))
     # plot_image3d(img)  # Show image as 3D surface
     # plot_histogram(img)
 
+def draw_temperature(tachyon):
+    geometry = Geometry(200)
+    ellipses = []
+    temp = []
+    for frame in tachyon.frame:
+        img = deserialize_frame(frame)
+        ellipse = geometry.find_geometry(img)
+        ellipses.append(np.array(ellipse))
+    ellipses = np.array(ellipses)
+    widths = np.array([axis[1]for axis in ellipses[:, 1]])
+    if 'temperature' in tachyon.columns:
+        for frame in tachyon.temperature:
+            temp.append(frame)
+    plt.figure()
+    plt.subplot(211)
+    plt.plot(widths)
+    plt.subplot(212)
+    plt.plot(temp)
+    plt.show()
 
 def find_track(tachyon):
     tachyonw = tachyon[tachyon.minor_axis.notnull()]
@@ -135,26 +154,58 @@ def max_evolution(tachyon):
 
 def center_evolution(tachyon):
     back = []
+    temp = []
     for frame in tachyon.frame:
         img = deserialize_frame(frame)
         back.append(np.mean(img[15:18, 11:13]))
     back = np.array(back)
     print back.max()
+    if 'temperature' in tachyon.columns:
+        for i in tachyon.temperature:
+            temp.append(i)
     plt.figure()
+    plt.subplot(211)
     plt.plot(back)
+    plt.subplot(212)
+    # plt.ylim(30.0, 40.0)
+    plt.plot(temp)
     plt.show()
+
 
 def back_evolution(tachyon):
     back = []
+    temp = []
     for frame in tachyon.frame:
         img = deserialize_frame(frame)
-        back.append(np.mean(img[27, 27]))
+        back.append(np.mean(img[25:27, 25:27]))
     back = np.array(back)
     print back.max()
+    if 'temperature' in tachyon.columns:
+        for i in tachyon.temperature:
+            temp.append(i)
     plt.figure()
+    plt.subplot(211)
     plt.plot(back)
+    plt.subplot(212)
+    plt.ylim(30.0, 40.0)
+    plt.plot(temp)
     plt.show()
 
+
+def resize(scale, img, ellipse):
+    img = cv2.resize(img, (scale*32, scale*32))
+    ((x, y), (w, l), a) = ellipse
+    ellipse = ((scale*x, scale*y), (scale*w, scale*l), a)
+    return img, ellipse
+
+
+def plot_frame(tachyon, nframe, th):
+    img = deserialize_frame(tachyon.frame[nframe])
+    geometry = Geometry(th)
+    ellipse = geometry.find_geometry(img)
+    plot_image(geometry.draw_geometry(img.copy(), ellipse))
+    plot_image3d(img)  # Show image as 3D surface
+    plot_histogram(img)
 
 
 if __name__ == "__main__":
