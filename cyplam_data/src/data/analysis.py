@@ -44,7 +44,7 @@ def read_hdf5(filename, keys=None):
 
 def plot_image(img):
     plt.figure()
-    plt.imshow(img, interpolation='calculate_velocitynone', cmap='jet', vmin=0, vmax=1024)
+    plt.imshow(img, interpolation='none', cmap='jet', vmin=0, vmax=1024)
     plt.show()
 
 
@@ -96,6 +96,22 @@ def calculate_geometry(frames, thr=200):
     return data
 
 
+def find_tracks(tachyon):
+    tachyonw = tachyon[tachyon.minor_axis.notnull()]
+    laser = np.array(tachyonw['minor_axis'] > 0)
+    lasernr = np.append(np.bitwise_not(laser[0]), np.bitwise_not(laser[:-1]))
+    lasernl = np.append(np.bitwise_not(laser[1:]), np.bitwise_not(laser[-1]))
+    laser_on = np.bitwise_and(laser, lasernr)
+    laser_off = np.bitwise_and(laser, lasernl)
+    laser_on_idx = tachyonw.index[laser_on]
+    laser_off_idx = tachyonw.index[laser_off]
+    # plt.figure()
+    # plt.plot(laser_on)
+    # plt.plot(laser_off)
+    # plt.show()
+    return laser_on_idx, laser_off_idx
+
+
 if __name__ == "__main__":
     import argparse
 
@@ -145,21 +161,7 @@ if __name__ == "__main__":
             meas = tachyon.loc[idx0:idx1]
             time = np.array(meas['time'])
 
-            # Find tracks
-            tachyonw = tachyon[tachyon.minor_axis.notnull()]
-            laser = np.array(tachyonw['minor_axis'] > 0)
-            lasernr = np.append(np.bitwise_not(laser[0]), np.bitwise_not(laser[:-1]))
-            lasernl = np.append(np.bitwise_not(laser[1:]), np.bitwise_not(laser[-1]))
-            laser_on = np.bitwise_and(laser, lasernr)
-            laser_off = np.bitwise_and(laser, lasernl)
-            laser_on_idx = tachyonw.index[laser_on]
-            laser_off_idx = tachyonw.index[laser_off]
-            print laser_on_idx, laser_off_idx
-            plt.figure()
-            plt.plot(laser_on)
-            plt.plot(laser_off)
-            plt.show()
-
+            laser_on_idx, laser_off_idx = find_tracks(tachyon)
             track = (laser_on_idx[0], laser_off_idx[0])  # first track
             data = calculate_geometry(tachyon.frame[track[0]:track[1]], thr=200)
             plt.figure()
