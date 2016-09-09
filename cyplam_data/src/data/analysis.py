@@ -42,6 +42,12 @@ def read_hdf5(filename, keys=None):
     return data
 
 
+def append_data(dataframe, data):
+    for key, value in data.iteritems():
+        dataframe[key] = pd.Series(value, index=dataframe.index)
+    return dataframe
+
+
 def plot_image(img):
     plt.figure()
     plt.imshow(img, interpolation='none', cmap='jet', vmin=0, vmax=1024)
@@ -67,6 +73,44 @@ def plot_image3d(img):
     plt.show()
 
 
+def plot_frame(frame, thr):
+    img = deserialize_frame(frame)
+    geometry = Geometry(thr)
+    ellipse = geometry.find_geometry(img)
+    plot_image(geometry.draw_geometry(img.copy(), ellipse))
+    plot_image3d(img)  # Show image as 3D surface
+    plot_histogram(img)
+
+
+def plot_speed(robot):
+    plt.figure()
+    plt.subplot(211)
+    plt.plot(robot['speed'])
+    plt.subplot(212)
+    plt.plot(robot['running'])
+    plt.show()
+
+
+def plot_geometry(data):
+    plt.figure()
+    plt.subplot(211)
+    plt.plot(data['width'])
+    plt.subplot(212)
+    plt.plot(data['height'])
+    plt.show()
+
+
+def plot_power(data):
+    plt.figure()
+    plt.subplot(211)
+    data.plot(x='time', y='minor_axis',
+              xlim=(time[0], time[-1]), ylim=(0, 5), color='blue')
+    plt.subplot(212)
+    data.plot(x='time', y='power',
+              xlim=(time[0], time[-1]), ylim=(0, 1500), color='red')
+    plt.show()
+
+
 def calculate_velocity(time, position):
     velocity = Velocity()
     data = {'speed': [], 'velocity': [], 'running': []}
@@ -78,38 +122,116 @@ def calculate_velocity(time, position):
     return data
 
 
-def append_data(dataframe, data):
-    for key, value in data.iteritems():
-        dataframe[key] = pd.Series(value, index=dataframe.index)
-    return dataframe
-
-
 def calculate_geometry(frames, thr=200):
     geometry = Geometry(thr)
-    ellipses = []
-    for frame in frames:
-        img = deserialize_frame(frame)
-        ellipse = geometry.find_geometry(img)
-        ellipses.append(np.array(ellipse))
-    ellipses = np.array(ellipses)
-    data['width'] = np.array([axis[1]for axis in ellipses[:, 1]])
+    ellipses = [geometry.find_geometry(frame) for frame in frames]
+    data = {'x': [], 'y': [], 'height': [], 'width': [], 'angle': []}
+    data['x'] = np.array([ellipse[0][0] for ellipse in ellipses])
+    data['y'] = np.array([ellipse[0][1] for ellipse in ellipses])
+    data['height'] = np.array([ellipse[1][0] for ellipse in ellipses])
+    data['width'] = np.array([ellipse[1][1] for ellipse in ellipses])
+    data['angle'] = np.array([ellipse[2] for ellipse in ellipses])
     return data
 
 
-def find_tracks(tachyon):
-    tachyonw = tachyon[tachyon.minor_axis.notnull()]
-    laser = np.array(tachyonw['minor_axis'] > 0)
+def find_tracks(tachyon, meas='minor_axis'):
+    tachyonw = tachyon[tachyon[meas].notnull()]
+    laser = np.array(tachyonw[meas] > 0)
     lasernr = np.append(np.bitwise_not(laser[0]), np.bitwise_not(laser[:-1]))
     lasernl = np.append(np.bitwise_not(laser[1:]), np.bitwise_not(laser[-1]))
     laser_on = np.bitwise_and(laser, lasernr)
     laser_off = np.bitwise_and(laser, lasernl)
     laser_on_idx = tachyonw.index[laser_on]
     laser_off_idx = tachyonw.index[laser_off]
+    tracks = []
+    for k in range(len(laser_on_idx)):
+        tracks.append([laser_on_idx[k], laser_off_idx[k]])
     # plt.figure()
     # plt.plot(laser_on)
     # plt.plot(laser_off)
     # plt.show()
-    return laser_on_idx, laser_off_idx
+    return tracks
+
+
+def draw_temperature(tachyon):
+    geometry = Geometry(200)
+    ellipses = []
+    temp = []
+    for frame in tachyon.frame:
+        img = deserialize_frame(frame)
+        ellipse = geometry.find_geometry(img)
+        ellipses.append(np.array(ellipse))
+    ellipses = np.array(ellipses)
+    widths = np.array([axis[1]for axis in ellipses[:, 1]])
+    if 'temperature' in tachyon.columns:
+        for frame in tachyon.temperature:
+            temp.append(frame)
+    plt.figure()
+    plt.subplot(211)
+    plt.plot(widths)
+    plt.subplot(212)
+    plt.plot(temp)
+    plt.show()
+
+
+def max_evolution(tachyon):
+    maxims = []
+    for frame in tachyon.frame:
+        img = deserialize_frame(frame)
+        maxims.append(img.max())
+    maxims = np.array(maxims)
+    print maxims.max()
+    plt.figure()
+    plt.plot(maxims)
+    plt.show()
+
+
+def center_evolution(tachyon):
+    back = []
+    temp = []
+    for frame in tachyon.frame:
+        img = deserialize_frame(frame)
+        back.append(np.mean(img[15:18, 11:13]))
+    back = np.array(back)
+    print back.max()
+    if 'temperature' in tachyon.columns:
+        for i in tachyon.temperature:
+            temp.append(i)
+    plt.figure()
+    plt.subplot(211)
+    plt.plot(back)
+    plt.subplot(212)
+    # plt.ylim(30.0, 40.0)
+    plt.plot(temp)
+    plt.show()
+
+
+def back_evolution(tachyon):
+    back = []
+    temp = []
+    for frame in tachyon.frame:
+        img = deserialize_frame(frame)
+        back.append(np.mean(img[25:27, 25:27]))
+    back = np.array(back)
+    print back.max()
+    if 'temperature' in tachyon.columns:
+        for i in tachyon.temperature:
+            temp.append(i)
+    plt.figure()
+    plt.subplot(211)
+    plt.plot(back)
+    plt.subplot(212)
+    plt.ylim(30.0, 40.0)
+    plt.plot(temp)
+    plt.show()
+
+
+# TODO: Move to ellipse calculation
+def resize_ellipse(scale, img, ellipse):
+    img = cv2.resize(img, (scale*32, scale*32))
+    ((x, y), (w, l), a) = ellipse
+    ellipse = ((scale*x, scale*y), (scale*w, scale*l), a)
+    return img, ellipse
 
 
 if __name__ == "__main__":
@@ -129,19 +251,12 @@ if __name__ == "__main__":
     if 'robot' in data.keys():
         robot = data['robot']
         velocity = calculate_velocity(robot.time, robot.position)
-        data['robot'] = append_data(robot, velocity)
-
-        plt.figure()
-        plt.subplot(211)
-        plt.plot(velocity['speed'])
-        plt.subplot(212)
-        plt.plot(velocity['running'])
-        plt.show()
+        robot = append_data(robot, velocity)
+        plot_speed(robot)
 
     if 'tachyon' in data.keys():
         tachyon = data['tachyon']
         tachyon = tachyon[tachyon.frame.notnull()]
-        #frames = read_frames(tachyon.frame)
 
         if 'minor_axis' in tachyon.columns:
             idx = tachyon.index[tachyon['minor_axis'] > 0]
@@ -161,32 +276,27 @@ if __name__ == "__main__":
             meas = tachyon.loc[idx0:idx1]
             time = np.array(meas['time'])
 
-            laser_on_idx, laser_off_idx = find_tracks(tachyon)
-            track = (laser_on_idx[0], laser_off_idx[0])  # first track
-            data = calculate_geometry(tachyon.frame[track[0]:track[1]], thr=200)
-            plt.figure()
-            plt.subplot(211)
-            plt.plot(data['width'])
-            plt.subplot(212)
-            plt.plot(data['width'] * 0.375)
-            plt.show()
+            tracks = find_tracks(tachyon, meas='minor_axis')
+            track0 = tracks[0] # first track (laser on, laser off)
+            frames = read_frames(tachyon.frame[track0[0]:track0[1]])
+            geometry = calculate_geometry(frames, thr=200)
+            plot_geometry(geometry)
 
-            # plot_image(geometry.draw_geometry(img, ellipse))
-            # plot_image3d(img)  # Show image as 3D surface
-            # plot_histogram(img)
+            plot_frame(tachyon.frame[track0[0] + 100], 200)
 
             # N = len(measures['power'])
             # print measures.loc[N-10:N-1]['time']
             # time = np.array(measures['time'])
             # print np.isclose(time[1:], time[:-1], atol=1e-03, rtol=0)
-            tachyonp = tachyon[tachyon.power.notnull()]
-            #tachyon.time = tachyon.time - tachyon.time[0]
-
-            plt.figure()
-            plt.subplot(211)
-            tachyonp.plot(x='time', y='minor_axis',
-                          xlim=(time[0], time[-1]), ylim=(0, 5), color='blue')
-            plt.subplot(212)
-            tachyonp.plot(x='time', y='power',
-                          xlim=(time[0], time[-1]), ylim=(0, 1500), color='red')
-            plt.show()
+            if 'power' in tachyon.columns:
+                tachyonp = tachyon[tachyon.power.notnull()]
+                plot_power(tachyonp)
+        else:
+            frames = read_frames(tachyon.frame)
+            geometry = calculate_geometry(frames, thr=200)
+            tachyon = append_data(tachyon, geometry)
+            tracks = find_tracks(tachyon, meas='width')
+            plot_geometry(tachyon)
+            print tracks
+            track = tracks[-1]
+            plot_geometry(tachyon[track[0]:track[1]])
