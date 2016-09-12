@@ -82,33 +82,43 @@ def plot_frame(frame, thr):
     plot_histogram(img)
 
 
-def plot_speed(robot):
+def plot_data(robot, x, y, color):
+    rows = len(y)
     plt.figure()
-    plt.subplot(211)
-    plt.plot(robot['speed'])
-    plt.subplot(212)
-    plt.plot(robot['running'])
+    for k in range(rows):
+        plt.subplot(rows, 1, k+1)
+        plt.plot(robot[x[k]], robot[y[k]], color=color[k])
+        plt.xlim(robot[x[k]].min(), robot[x[k]].max())
+        plt.ylabel(y[k])
     plt.show()
+
+
+def plot_speed(robot):
+    plot_data(robot, x=('time', 'time'), y=('speed', 'running'),
+              color=('blue', 'red'))
 
 
 def plot_geometry(data):
-    plt.figure()
-    plt.subplot(211)
-    plt.plot(data['width'])
-    plt.subplot(212)
-    plt.plot(data['height'])
-    plt.show()
+    plot_data(data, x=('time', 'time'), y=('width', 'height'),
+              color=('blue', 'green'))
 
 
 def plot_power(data):
     plt.figure()
     plt.subplot(211)
     data.plot(x='time', y='minor_axis',
-              xlim=(time[0], time[-1]), ylim=(0, 5), color='blue')
+              xlim=(data['time'][0], data['time'][-1]), ylim=(0, 5),
+              color='blue')
     plt.subplot(212)
     data.plot(x='time', y='power',
-              xlim=(time[0], time[-1]), ylim=(0, 1500), color='red')
+              xlim=(data['time'][0], data['time'][-1]), ylim=(0, 1500),
+              color='red')
     plt.show()
+
+
+def plot_temperature(data):
+    plot_data(data, x=('time', 'time'), y=('width', 'temperature'),
+              color=('blue', 'red'))
 
 
 def calculate_velocity(time, position):
@@ -153,25 +163,21 @@ def find_tracks(tachyon, meas='minor_axis'):
     return tracks
 
 
-def draw_temperature(tachyon):
-    geometry = Geometry(200)
-    ellipses = []
-    temp = []
-    for frame in tachyon.frame:
-        img = deserialize_frame(frame)
-        ellipse = geometry.find_geometry(img)
-        ellipses.append(np.array(ellipse))
-    ellipses = np.array(ellipses)
-    widths = np.array([axis[1]for axis in ellipses[:, 1]])
-    if 'temperature' in tachyon.columns:
-        for frame in tachyon.temperature:
-            temp.append(frame)
-    plt.figure()
-    plt.subplot(211)
-    plt.plot(widths)
-    plt.subplot(212)
-    plt.plot(temp)
-    plt.show()
+def find_data(tachyon, tracks):
+    idx0, idx1 = tracks[0][0], tracks[-1][1]
+    time0 = tachyon['time'][idx0]
+    time1 = tachyon['time'][idx1]
+    idx = tachyon.index[tachyon.time < time0-1]
+    idx0 = idx[-1]
+    idx = tachyon.index[tachyon.time > time1+1]
+    idx1 = idx[0]
+    print idx0, idx1
+    if idx0 < 0:
+        idx0 = 0
+    if idx1 > len(tachyon):
+        idx1 = len(tachyon)
+    return idx0, idx1
+
 
 
 def max_evolution(tachyon):
@@ -259,23 +265,6 @@ if __name__ == "__main__":
         tachyon = tachyon[tachyon.frame.notnull()]
 
         if 'minor_axis' in tachyon.columns:
-            idx = tachyon.index[tachyon['minor_axis'] > 0]
-            idx0, idx1 = idx[0], idx[-1]
-            time0 = tachyon.time[idx0]
-            time1 = tachyon.time[idx1]
-            print idx0, idx1, time0, time1
-            idx = tachyon.index[tachyon.time < time0-1]
-            idx0 = idx[-1]
-            idx = tachyon.index[tachyon.time > time1+1]
-            idx1 = idx[0]
-            print idx0, idx1
-            if idx0 < 0:
-                idx0 = 0
-            if idx1 > len(tachyon):
-                idx1 = len(tachyon)
-            meas = tachyon.loc[idx0:idx1]
-            time = np.array(meas['time'])
-
             tracks = find_tracks(tachyon, meas='minor_axis')
             track0 = tracks[0] # first track (laser on, laser off)
             frames = read_frames(tachyon.frame[track0[0]:track0[1]])
@@ -284,10 +273,14 @@ if __name__ == "__main__":
 
             plot_frame(tachyon.frame[track0[0] + 100], 200)
 
+            if 'temperature' in tachyon.columns:
+                plot_temperature(tachyon)
+
             # N = len(measures['power'])
             # print measures.loc[N-10:N-1]['time']
             # time = np.array(measures['time'])
             # print np.isclose(time[1:], time[:-1], atol=1e-03, rtol=0)
+
             if 'power' in tachyon.columns:
                 tachyonp = tachyon[tachyon.power.notnull()]
                 plot_power(tachyonp)
@@ -296,7 +289,10 @@ if __name__ == "__main__":
             geometry = calculate_geometry(frames, thr=200)
             tachyon = append_data(tachyon, geometry)
             tracks = find_tracks(tachyon, meas='width')
-            plot_geometry(tachyon)
-            print tracks
-            track = tracks[-1]
-            plot_geometry(tachyon[track[0]:track[1]])
+            print 'Tracks:', tracks
+            idxs = find_data(tachyon, tracks)
+            print 'Data from %i to %i.' % idxs
+            plot_geometry(tachyon.loc[idxs[0]:idxs[1]])
+
+            if 'temperature' in tachyon.columns:
+                plot_temperature(tachyon)
