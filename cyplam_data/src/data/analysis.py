@@ -82,13 +82,13 @@ def plot_frame(frame, thr):
     plot_histogram(img)
 
 
-def plot_data(robot, x, y, color):
+def plot_data(data, x, y, color):
     rows = len(y)
     plt.figure()
     for k in range(rows):
         plt.subplot(rows, 1, k+1)
-        plt.plot(robot[x[k]], robot[y[k]], color=color[k])
-        plt.xlim(robot[x[k]].min(), robot[x[k]].max())
+        plt.plot(data[x[k]], data[y[k]], color=color[k])
+        plt.xlim(data[x[k]].min(), data[x[k]].max())
         plt.ylabel(y[k])
     plt.show()
 
@@ -269,7 +269,7 @@ if __name__ == "__main__":
             track0 = tracks[0] # first track (laser on, laser off)
             frames = read_frames(tachyon.frame[track0[0]:track0[1]])
             geometry = calculate_geometry(frames, thr=200)
-            plot_geometry(geometry)
+            #plot_geometry(geometry)
 
             plot_frame(tachyon.frame[track0[0] + 100], 200)
 
