@@ -21,6 +21,7 @@ DIRDEST = '/home/ryco/data/'
 
 TOPICS = ['/tachyon/image',
           '/camera/image',
+          '/tachyon/temperature',
           #'/tachyon/geometry',
           #'/control/power',
           '/joint_states']
