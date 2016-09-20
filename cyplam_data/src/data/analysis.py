@@ -156,10 +156,6 @@ def find_tracks(tachyon, meas='minor_axis'):
     tracks = []
     for k in range(len(laser_on_idx)):
         tracks.append([laser_on_idx[k], laser_off_idx[k]])
-    # plt.figure()
-    # plt.plot(laser_on)
-    # plt.plot(laser_off)
-    # plt.show()
     return tracks
 
 
@@ -179,57 +175,36 @@ def find_data(tachyon, tracks):
     return idx0, idx1
 
 
-
-def max_evolution(tachyon):
-    maxims = []
+def calculate_back(tachyon):
+    back = {'digital_level': []}
     for frame in tachyon.frame:
         img = deserialize_frame(frame)
-        maxims.append(img.max())
-    maxims = np.array(maxims)
-    print maxims.max()
-    plt.figure()
-    plt.plot(maxims)
-    plt.show()
+        back['digital_level'].append(np.mean(img[25:27, 25:27]))
+    print max(back['digital_level'])
+    return back
 
 
-def center_evolution(tachyon):
-    back = []
-    temp = []
+def calculate_clad(tachyon):
+    data = {'digital_level': []}
     for frame in tachyon.frame:
         img = deserialize_frame(frame)
-        back.append(np.mean(img[15:18, 11:13]))
-    back = np.array(back)
-    print back.max()
-    if 'temperature' in tachyon.columns:
-        for i in tachyon.temperature:
-            temp.append(i)
-    plt.figure()
-    plt.subplot(211)
-    plt.plot(back)
-    plt.subplot(212)
-    # plt.ylim(30.0, 40.0)
-    plt.plot(temp)
-    plt.show()
+        data['digital_level'].append(np.mean(img[15:18, 11:13]))
+    print max(data['digital_level'])
+    return data
 
 
-def back_evolution(tachyon):
-    back = []
-    temp = []
+def calculate_maximun(tachyon):
+    data = {'digital_level': []}
     for frame in tachyon.frame:
         img = deserialize_frame(frame)
-        back.append(np.mean(img[25:27, 25:27]))
-    back = np.array(back)
-    print back.max()
-    if 'temperature' in tachyon.columns:
-        for i in tachyon.temperature:
-            temp.append(i)
-    plt.figure()
-    plt.subplot(211)
-    plt.plot(back)
-    plt.subplot(212)
-    plt.ylim(30.0, 40.0)
-    plt.plot(temp)
-    plt.show()
+        data['digital_level'].append(img.max())
+    print max(data['digital_level'])
+    return data
+
+
+def plot_digital(tachyon, data):
+    tachyon = append_data(tachyon, data)
+    plot_data(tachyon, ['time'], ['digital_level'], ['blue'])
 
 
 # TODO: Move to ellipse calculation
