@@ -7,7 +7,14 @@ from mpl_toolkits.mplot3d import Axes3D
 
 from measures.velocity import Velocity
 from measures.geometry import Geometry
-from otsu import Otsu
+
+
+from skimage import data
+try:
+    from skimage import filters
+except ImportError:
+    from skimage import filter as filters
+
 
 def serialize_frame(frame, encode='*.png'):
     return cv2.imencode(encode, frame)[1].tostring(None)
@@ -63,7 +70,7 @@ def plot_image3d(img):
     ax = fig.gca(projection='3d')
     xx, yy = np.mgrid[0:img.shape[0], 0:img.shape[1]]
     ax.plot_surface(xx, yy, img, rstride=1, cstride=1, linewidth=0,
-                    cmap='jet', vmin=0, vmax=1024)
+                        cmap='jet', vmin=0, vmax=1024)
     plt.show()
 
 
@@ -99,10 +106,6 @@ def find_geometry(tachyon):
     plt.subplot(212)
     plt.plot(widths * 2.66666667)
     plt.show()
-
-    # plot_image(geometry.draw_geometry(img, ellipse))
-    # plot_image3d(img)  # Show image as 3D surface
-    # plot_histogram(img)
 
 
 def draw_temperature(tachyon):
@@ -189,7 +192,6 @@ def back_evolution(tachyon):
     plt.subplot(211)
     plt.plot(back)
     plt.subplot(212)
-    plt.ylim(30.0, 40.0)
     plt.plot(temp)
     plt.show()
 
@@ -201,7 +203,7 @@ def resize(scale, img, ellipse):
     return img, ellipse
 
 
-def plot_frame(tachyon, nframe, th):
+def plot_frame(nframe, th):
     img = deserialize_frame(tachyon.frame[nframe])
     geometry = Geometry(th)
     ellipse = geometry.find_geometry(img)
@@ -264,6 +266,7 @@ if __name__ == "__main__":
             # print measures.loc[N-10:N-1]['time']
             # time = np.array(measures['time'])
             # print np.isclose(time[1:], time[:-1], atol=1e-03, rtol=0)
+
             tachyonp = tachyon[tachyon.power.notnull()]
             #tachyon.time = tachyon.time - tachyon.time[0]
 
