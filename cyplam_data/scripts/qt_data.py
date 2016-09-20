@@ -20,7 +20,9 @@ DIRDATA = 'bag_data'
 DIRDEST = '/home/ryco/data/'
 
 TOPICS = ['/tachyon/image',
-          '/tachyon/geometry',
+          '/camera/image',
+          '/tachyon/temperature',
+          #'/tachyon/geometry',
           #'/control/power',
           '/joint_states']
 
@@ -52,6 +54,7 @@ class QtData(QtGui.QWidget):
         self.name = ''
         self.status = False
         self.running = False
+        self.recording = False
         self.process = QtCore.QProcess(self)
 
         if rospy.has_param('/material'):
@@ -113,26 +116,28 @@ class QtData(QtGui.QWidget):
             outfile.write(yaml.dump(params, default_flow_style=False))
         self.txtOutput.textCursor().insertText(str(params))
 
-    def dataReady(self):
-        cursor = self.txtOutput.textCursor()
-        cursor.movePosition(cursor.End)
-        text = str(self.process.readAll())
-        cursor.insertText(text)
+    # def dataReady(self):
+    #     cursor = self.txtOutput.textCursor()
+    #     cursor.movePosition(cursor.End)
+    #     text = str(self.process.readAll())
+    #     cursor.insertText(text)
 
     def callProgram(self):
         os.chdir(self.dirdata)
         filename = 'data_' + self.name + '.bag'
+        self.recording = True
         self.process.start(
             'rosrun rosbag record -O %s %s' % (filename, ' '.join(TOPICS)))
 
     def killProgram(self):
         os.system('killall -2 record')
         self.process.waitForFinished()
+        self.recording = False
 
     def cbStatus(self, msg_status):
         if self.running:
             status = msg_status.running
-            if not self.status and status:
+            if not self.status and status and not self.recording:
                 self.name = time.strftime('%Y%m%d-%H%M%S')
                 self.saveParameters()
                 self.txtOutput.textCursor().insertText(
