@@ -168,53 +168,25 @@ def find_tracks(tachyon, meas='minor_axis'):
     lasernl = np.append(np.bitwise_not(laser[1:]), np.bitwise_not(laser[-1]))
     laser_on = np.bitwise_and(laser, lasernr)
     laser_off = np.bitwise_and(laser, lasernl)
-    laser_on_idx = tachyonw.index[laser_on]
-    laser_off_idx = tachyonw.index[laser_off]
+    lon_idx = tachyonw.index[laser_on]
+    loff_idx = tachyonw.index[laser_off]
     tracks = []
-    for k in range(len(laser_on_idx)):
-        if laser_off_idx[k] - laser_on_idx[k] > 10:
-            tracks.append([laser_on_idx[k], laser_off_idx[k]])
-    # plt.figure()
-    # plt.plot(laser_on)
-    # plt.plot(laser_off)
-    # plt.show()
+    for k in range(len(lon_idx)):
+        if loff_idx[k] - lon_idx[k] > 30:
+            tracks.append([tachyon['time'][lon_idx[k]],
+                           tachyon['time'][loff_idx[k]]])
     return tracks
 
 
-def tracks_times(tachyon, tracks):
-    times = []
-    for track in tracks:
-        times.append([tachyon['time'][track[0]], tachyon['time'][track[1]]])
-    return times
-
-
-def find_tachyon_data(tachyon, tracks):
-    idx0, idx1 = tracks[0][0], tracks[-1][1]
-    time0 = tachyon['time'][idx0]
-    time1 = tachyon['time'][idx1]
-    idx = tachyon.index[tachyon.time < time0-1]
-    idx0 = idx[-1]
-    idx = tachyon.index[tachyon.time > time1+1]
-    idx1 = idx[0]
-    if idx0 < 0:
-        idx0 = 0
-    if idx1 > len(tachyon):
-        idx1 = len(tachyon)
-    print 'Data from %i to %i.' % (idx0, idx1)
-    return idx0, idx1
-
-
-def find_data_tracks(data, times, offset=0.5):
-    if type(times[0]) is list:
-        time0 = times[0][0]
-        time1 = times[-1][1]
+def find_data_tracks(data, tracks, offset=1.0):
+    if type(tracks[0]) is list:
+        time0 = tracks[0][0]
+        time1 = tracks[-1][1]
     else:
-        time0 = times[0]
-        time1 = times[1]
-    idx = data.index[data.time < time0-offset]
-    idx0 = idx[-1]
-    idx = data.index[data.time > time1+offset]
-    idx1 = idx[0]
+        time0 = tracks[0]
+        time1 = tracks[1]
+    idx0 = data.index[data.time < time0-offset][-1]
+    idx1 = data.index[data.time > time1+offset][0]
     if idx0 < 0:
         idx0 = 0
     if idx1 > len(data):
@@ -222,44 +194,36 @@ def find_data_tracks(data, times, offset=0.5):
     return data.loc[idx0:idx1]
 
 
-def max_evolution(tachyon):
-    maxims = []
+def calculate_back(tachyon):
+    back = {'digital_level': []}
     for frame in tachyon.frame:
         img = deserialize_frame(frame)
-        maxims.append(img.max())
-    maxims = np.array(maxims)
-    print maxims.max()
-    plot_back(maxims, np.array(tachyon.temperature))
+        back['digital_level'].append(np.mean(img[25:27, 25:27]))
+    print max(back['digital_level'])
+    return back
 
 
-def center_evolution(tachyon):
-    back = []
+def calculate_clad(tachyon):
+    data = {'digital_level': []}
     for frame in tachyon.frame:
         img = deserialize_frame(frame)
-        back.append(np.mean(img[15:18, 11:13]))
-    back = np.array(back)
-    print back.max()
-    plot_back(back, np.array(tachyon.temperature))
+        data['digital_level'].append(np.mean(img[15:18, 11:13]))
+    print max(data['digital_level'])
+    return data
 
 
-def back_evolution(tachyon):
-    back = []
+def calculate_maximun(tachyon):
+    data = {'digital_level': []}
     for frame in tachyon.frame:
         img = deserialize_frame(frame)
-        back.append(np.mean(img[25:27, 25:27]))
-    back = np.array(back)
-    print back.max()
-    plot_back(back, np.array(tachyon.temperature))
+        data['digital_level'].append(img.max())
+    print max(data['digital_level'])
+    return data
 
 
-def plot_back(back, temp):
-    plt.figure()
-    plt.subplot(211)
-    plt.plot(back)
-    plt.subplot(212)
-    plt.ylim(30.0, 40.0)
-    plt.plot(temp)
-    plt.show()
+def plot_digital(tachyon, data):
+    tachyon = append_data(tachyon, data)
+    plot_data(tachyon, ['time'], ['digital_level'], ['blue'])
 
 
 # TODO: Move to ellipse calculation
@@ -271,16 +235,28 @@ def resize_ellipse(scale, img, ellipse):
 
 
 if __name__ == "__main__":
+    import os
     import argparse
 
     parser = argparse.ArgumentParser()
+    parser.add_argument(
+        '-b', '--bag', type=str, default=None, help='bag filename')
     parser.add_argument(
         '-f', '--file', type=str, default=None, help='hdf5 filename')
     parser.add_argument(
         '-t', '--tables', type=str, default=None, nargs='+', help='tables names')
     args = parser.parse_args()
 
-    filename = args.file
+    if args.bag:
+        import bag2h5
+        data = bag2h5.read_bag_data(args.bag)
+        name, ext = os.path.splitext(args.bag)
+        filename = name + '.h5'
+        bag2h5.write_hdf5(filename, data)
+
+    if args.file:
+        filename = args.file
+
     tables = args.tables
     data = read_hdf5(filename, tables)
 
@@ -299,9 +275,7 @@ if __name__ == "__main__":
             plot_data(tachyon, ['time'], ['minor_axis'], ['blue'])
 
             tracks = find_tracks(tachyon, meas='minor_axis')  # first track (laser on, laser off)
-            times = tracks_times(tachyon, tracks)
-
-            frames = read_frames(tachyon.frame.loc[tracks[0][0]:tracks[-1][1]])
+            frames = read_frames(find_data_tracks(tachyon, tracks, offset=0).frame)
             plot_frames(frames)
 
             if 'temperature' in tachyon.columns:
@@ -314,14 +288,13 @@ if __name__ == "__main__":
             geometry = calculate_geometry(frames, thr=150)
             tachyon = append_data(tachyon, geometry)
             tracks = find_tracks(tachyon, meas='width')
-            times = tracks_times(tachyon, tracks)
-            print 'Tracks times:', times
+            print 'Tracks:', tracks
 
-            plot_geometry(find_data_tracks(tachyon, times, offset=0.1))
+            plot_geometry(find_data_tracks(tachyon, tracks, offset=0.1))
 
     if 'camera' in data.keys():
         camera = data['camera']
         print 'Camera length:', len(camera)
 
-        cframes = read_frames(find_data_tracks(camera, times, offset=0).frame)
+        cframes = read_frames(find_data_tracks(camera, tracks, offset=0).frame)
         plot_frames(cframes)
