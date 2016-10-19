@@ -172,7 +172,6 @@ if __name__ == "__main__":
         data['tachyon'] = data['tachyon'].rename(columns={'value': 'power'})
         del data['control']
 
-    name, ext = os.path.splitext(filename)
-    filename = name + '.h5'
+    filename = os.path.splitext(filename)[0] + '.h5'
     write_hdf5(filename, data)
     #data = read_hdf5(filename)
