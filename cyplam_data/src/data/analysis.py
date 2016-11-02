@@ -1,9 +1,22 @@
+import os
 import cv2
+import yaml
 import numpy as np
 import pandas as pd
 
 from measures.velocity import Velocity
 from measures.geometry import Geometry
+
+
+def read_yaml(filename):
+    with open(filename, 'r') as f:
+        data = yaml.load(f)
+    return data
+
+
+def save_yaml(filename, data):
+    with open(filename, 'w') as f:
+        f.write(yaml.dump(data))
 
 
 def serialize_frame(frame, encode='*.png'):
@@ -82,7 +95,7 @@ def find_laser_switch(laser):
     return laser_on, laser_off
 
 
-def find_tracks(tachyon, meas='minor_axis', thr=0):
+def _find_tracks(tachyon, meas='minor_axis', thr=0):
     tachyonw = tachyon[tachyon[meas].notnull()]
     laser = np.array(tachyonw[meas] > thr)
     laser_on, laser_off = find_laser_switch(laser)
@@ -93,6 +106,14 @@ def find_tracks(tachyon, meas='minor_axis', thr=0):
         if loff_idx[k] - lon_idx[k] > 30:
             tracks.append([tachyon['time'][lon_idx[k]],
                            tachyon['time'][loff_idx[k]]])
+    return tracks
+
+
+def find_tracks(tachyon):
+    images = read_frames(tachyon.frame)
+    maximum = calculate_maximum(images)
+    tachyon = append_data(tachyon, maximum)
+    tracks = _find_tracks(tachyon, meas='maximum', thr=200)
     return tracks
 
 
@@ -145,6 +166,59 @@ def calculate_maximun(tachyon):
     return data
 
 
+def read_labels_data(dirname, n_tracks=1):
+    filename = os.path.join(dirname, 'labels.yaml')
+    if os.path.isfile(filename):
+        data = read_yaml(filename)
+    else:
+        data = {'tracks': [-1] * n_tracks}
+        save_yaml(filename, data)
+    return data['tracks']
+
+
+def find_itracks(tachyon, tracks):
+    itracks = [find_indexes_track(
+        tachyon, track, offset=0) for track in tracks]
+    return itracks
+
+
+def label_tracks(tachyon, tracks, labels):
+    itracks = find_itracks(tachyon, tracks)
+    if 'label' not in tachyon.columns:
+        tachyon.insert(2, 'label', -1)
+    else:
+        tachyon['label'] = -1
+    for k, idxs in enumerate(itracks):
+        tachyon['label'].iloc[idxs[0]:idxs[1]] = labels[k]
+    return tachyon
+
+
+def append_geometry(tachyon):
+    frames = read_frames(tachyon.frame)
+    geometry = calculate_geometry(frames, thr=150)
+    tachyon = append_data(tachyon, geometry)
+    return tachyon
+
+
+def read_tachyon_data(filename):
+    dirname = os.path.dirname(filename)
+    h5fname = os.path.splitext(filename)[0] + '.h5'
+    bgfname = os.path.splitext(filename)[0] + '.bag'
+    if not os.path.isfile(h5fname):
+        data = bag2h5.read_bag_data(bgfname)
+        bag2h5.write_hdf5(h5fname, data)
+    #data = bag2h5.read_bag_data(filename, ['/tachyon/image'])
+    data = read_hdf5(h5fname, ['tachyon'])
+    tachyon = data['tachyon'][data['tachyon'].frame.notnull()]
+    tracks = find_tracks(tachyon)
+    labels = read_labels_data(dirname, n_tracks=len(tracks))
+    tachyon = label_tracks(tachyon, tracks, labels)
+    if 'width' not in tachyon.columns:
+        tachyon = append_geometry(tachyon)
+    write_hdf5(h5fname, {'tachyon': tachyon})
+    return tachyon, tracks, labels
+
+
 # TODO: Move to ellipse calculation
 def resize_ellipse(scale, img, ellipse):
     img = cv2.resize(img, (scale*32, scale*32))
@@ -154,7 +228,6 @@ def resize_ellipse(scale, img, ellipse):
 
 
 if __name__ == "__main__":
-    import os
     import plot
     import argparse
 
@@ -190,7 +263,7 @@ if __name__ == "__main__":
             tachyon = tachyon[tachyon.minor_axis.notnull()]
             plot.plot_data(tachyon, ['time'], ['minor_axis'], ['blue'])
 
-            tracks = find_tracks(tachyon, meas='minor_axis')  # first track (laser on, laser off)
+            tracks = _find_tracks(tachyon, meas='minor_axis')  # first track (laser on, laser off)
             frames = read_frames(find_data_tracks(tachyon, tracks, offset=0).frame)
             plot.plot_frames(frames)
 
@@ -203,7 +276,7 @@ if __name__ == "__main__":
             frames = read_frames(tachyon.frame)
             geometry = calculate_geometry(frames, thr=150)
             tachyon = append_data(tachyon, geometry)
-            tracks = find_tracks(tachyon, meas='width')
+            tracks = _find_tracks(tachyon, meas='width')
             print 'Tracks:', len(tracks), tracks
 
             plot.plot_geometry(find_data_tracks(tachyon, tracks, offset=0.1))
