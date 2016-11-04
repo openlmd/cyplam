@@ -58,6 +58,18 @@ def append_data(dataframe, data):
     return dataframe
 
 
+def get_data_array(dataframe, labels):
+    dats = []
+    for label in labels:
+        dat = dataframe[label]
+        if isinstance(dat.iloc[0], np.ndarray):
+            d = np.array([r for r in dat])
+        else:
+            d = np.array(dat).reshape(len(dat), -1)
+        dats.append(d)
+    return np.hstack(dats)
+
+
 def calculate_velocity(time, position):
     velocity = Velocity()
     data = {'speed': [], 'velocity': [], 'running': []}
@@ -109,14 +121,6 @@ def _find_tracks(tachyon, meas='minor_axis', thr=0):
     return tracks
 
 
-def find_tracks(tachyon):
-    images = read_frames(tachyon.frame)
-    maximum = calculate_maximum(images)
-    tachyon = append_data(tachyon, maximum)
-    tracks = _find_tracks(tachyon, meas='maximum', thr=200)
-    return tracks
-
-
 def find_indexes_track(data, track, offset=0):
     time0, time1 = track
     idx0 = data.index[data.time < time0-offset][-1]
@@ -139,31 +143,18 @@ def find_data_tracks(data, tracks, offset=1.0):
     return data.loc[idx0:idx1]
 
 
-def calculate_back(tachyon):
-    back = {'digital_level': []}
-    for frame in tachyon.frame:
-        img = deserialize_frame(frame)
-        back['digital_level'].append(np.mean(img[25:27, 25:27]))
-    print max(back['digital_level'])
-    return back
+def find_itracks(tachyon, tracks):
+    itracks = [find_indexes_track(
+        tachyon, track, offset=0) for track in tracks]
+    return itracks
 
 
-def calculate_clad(tachyon):
-    data = {'digital_level': []}
-    for frame in tachyon.frame:
-        img = deserialize_frame(frame)
-        data['digital_level'].append(np.mean(img[15:18, 11:13]))
-    print max(data['digital_level'])
-    return data
-
-
-def calculate_maximun(tachyon):
-    data = {'digital_level': []}
-    for frame in tachyon.frame:
-        img = deserialize_frame(frame)
-        data['digital_level'].append(img.max())
-    print max(data['digital_level'])
-    return data
+def find_tracks(tachyon):
+    images = read_frames(tachyon.frame)
+    maximum = calculate_maximum(images)
+    tachyon = append_data(tachyon, maximum)
+    tracks = _find_tracks(tachyon, meas='maximum', thr=200)
+    return tracks
 
 
 def read_labels_data(dirname, n_tracks=1):
@@ -174,12 +165,6 @@ def read_labels_data(dirname, n_tracks=1):
         data = {'tracks': [-1] * n_tracks}
         save_yaml(filename, data)
     return data['tracks']
-
-
-def find_itracks(tachyon, tracks):
-    itracks = [find_indexes_track(
-        tachyon, track, offset=0) for track in tracks]
-    return itracks
 
 
 def label_tracks(tachyon, tracks, labels):
@@ -207,7 +192,6 @@ def read_tachyon_data(filename):
     if not os.path.isfile(h5fname):
         data = bag2h5.read_bag_data(bgfname)
         bag2h5.write_hdf5(h5fname, data)
-    #data = bag2h5.read_bag_data(filename, ['/tachyon/image'])
     data = read_hdf5(h5fname, ['tachyon'])
     tachyon = data['tachyon'][data['tachyon'].frame.notnull()]
     tracks = find_tracks(tachyon)
