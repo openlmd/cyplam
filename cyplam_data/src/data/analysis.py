@@ -190,6 +190,7 @@ def read_tachyon_data(filename):
     h5fname = os.path.splitext(filename)[0] + '.h5'
     bgfname = os.path.splitext(filename)[0] + '.bag'
     if not os.path.isfile(h5fname):
+        import bag2h5
         data = bag2h5.read_bag_data(bgfname)
         bag2h5.write_hdf5(h5fname, data)
     data = read_hdf5(h5fname, ['tachyon'])

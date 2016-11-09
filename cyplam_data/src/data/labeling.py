@@ -1,3 +1,5 @@
+import os
+import glob
 import numpy as np
 
 from data import plot
@@ -15,17 +17,19 @@ def read_dataset(filename, offset=-0.1):
     #plot.plot_geometry(tachyon)
     data = [analysis.find_data_tracks(
         tachyon, track, offset) for track in tracks]
-    frames = [analysis.read_frames(data[k].frame) for k in range(len(data))]
-    return frames, labels
+    return data, labels
+
+
+def read_dataframes(data):
+    return [analysis.read_frames(data[k].frame) for k in range(len(data))]
 
 
 def read_datasets(filenames, offset=-0.1):
     data, labels = [], []
     for filename in filenames:
-        frames, lbls = read_dataset(filename, offset)
-        data.extend(frames)
+        dat, lbls = read_dataset(filename, offset)
+        data.extend(dat)
         labels.extend(lbls)
-    data, labels = np.array(data), np.array(labels)
     return data, labels
 
 
@@ -39,9 +43,15 @@ def label_data(data, labels):
     return features, targets
 
 
+def get_filenames(dirnames):
+    filenames = []
+    for dirname in dirnames:
+        filesnames = sorted(glob.glob(os.path.join(dirname, '*.bag')))
+        filenames.append(filesnames[-1])
+    return filenames
+
+
 if __name__ == "__main__":
-    import os
-    import glob
     import argparse
     from defects import defects
 
@@ -57,35 +67,29 @@ if __name__ == "__main__":
                     '/home/jorge/data/data_set23/20160923_2v_oven',
                     '/home/jorge/data/data_set23/20160923_3t_oven',
                     '/home/jorge/data/data_set23/20160923_4c_oven',
-                    '/home/jorge/data/data_set23/20160923_5f_oven',
-                    '/home/jorge/data/data_set23/20160923_6c_oven']
+                    '/home/jorge/data/data_set23/20160923_5f_oven']
     else:
         dirnames = [dirname]
 
-    filenames = []
-    for dirname in dirnames:
-        filesnames = sorted(glob.glob(os.path.join(dirname, '*.bag')))
-        filenames.append(filesnames[-1])
+    filenames = get_filenames(dirnames)
     print filenames
 
     eigenFaces = defects.EigenFaces()
     data, labels = read_datasets(filenames, offset=-0.1)
-    eigenfaces = eigenFaces.train(np.concatenate(data))
-    plot.plot_frames(eigenfaces)
+    frames = read_dataframes(data)
+    eigenfaces = eigenFaces.train(np.concatenate(frames))
 
     # Calculate features and labeling
     offset = 0
     filename = filenames[0]
     data, labels = [], []
-    for filename in filenames[0:2]:
-        tachyon, tracks, lbls = analysis.read_tachyon_data(filename)
-        frames = analysis.read_frames(tachyon.frame)
-        features = eigenFaces.transform(frames)
-        tachyon = analysis.append_data(tachyon, {'features': list(features)})
-        dat = [analysis.find_data_tracks(tachyon, track, 0) for track in tracks]
-        #frames = [analysis.read_frames(data[k].frame) for k in range(len(data))]
-        [data.append(analysis.get_data_array(d, ['width', 'features'])) for d in dat]
-        labels.extend(lbls)
+    dat, lbls = read_datasets(filenames[0:5], offset=0)
+    for k in range(len(dat)):
+        frames = analysis.read_frames(dat[k].frame)
+        features = {'features': list(eigenFaces.transform(frames))}
+        dat[k] = analysis.append_data(dat[k], features)
+        data.append(analysis.get_data_array(dat[k], ['features']))
+        labels.append(lbls[k])
     features, targets = label_data(data, labels)
     # plot.plot_features_2d(features, targets)
 
@@ -94,8 +98,18 @@ if __name__ == "__main__":
 
     clas = defects.Classifier()
 
+    from sklearn.utils import shuffle
     feats = features[targets >= 0]
     targs = targets[targets >= 0]
+    # fts, tgs = [], []
+    # for tar in np.unique(targs):
+    #     fets, tags = shuffle(features[targets == tar], targets[targets == tar],
+    #                          random_state=0, n_samples=1000)
+    #     fts.append(fets)
+    #     tgs.append(tags)
+    # feats = np.vstack(fts)
+    # targs = np.hstack(tgs)
+
     labls = [str(label) for label in np.unique(targs)]
     clas.train_test(feats, targs, labls)
     defects.plot.plot_features(feats, targs)
@@ -108,21 +122,28 @@ if __name__ == "__main__":
     # prediction = [clas.predict(X) for X in features]
     # defects.plot.plot_features(features, prediction)
 
+    dirnames = ['/home/jorge/data/data_set23/20160922_1p',
+                '/home/jorge/data/data_set23/20160923_2v',
+                '/home/jorge/data/data_set23/20160923_3t',
+                '/home/jorge/data/data_set23/20160923_4c',
+                '/home/jorge/data/data_set23/20160923_5f',
+                '/home/jorge/data/data_set23/20160923_6c',
+                '/home/jorge/data/data_set23/20160922_1p_oven',
+                '/home/jorge/data/data_set23/20160923_2v_oven',
+                '/home/jorge/data/data_set23/20160923_3t_oven',
+                '/home/jorge/data/data_set23/20160923_4c_oven',
+                '/home/jorge/data/data_set23/20160923_5f_oven',
+                '/home/jorge/data/data_set23/20160923_6c_oven']
+    filenames = get_filenames(dirnames)
+
     for n, filename in enumerate(filenames):
         data, labels = read_datasets([filename], offset=0)
         for k, dat in enumerate(data):
-            features = eigenFaces.transform(dat)
+            frames = analysis.read_frames(dat.frame)
+            features = {'features': list(eigenFaces.transform(frames))}
+            dat = analysis.append_data(dat, features)
+            features = analysis.get_data_array(dat, ['features'])
             prediction = np.array([clas.predict(X) for X in features])
-            #defects.plot.plot_features(features, prediction)
             score = float(np.sum(prediction))/len(prediction)
-            print n, 'score', k, score, np.sum(prediction==0), np.sum(prediction==1), np.sum(prediction==2), np.sum(prediction==3), np.sum(prediction==4)
-
-    # features, labels = [], []
-    # for track in tracks:
-    #     data = analysis.find_data_tracks(tachyon, track, 0)
-    #     feats = analysis.get_data_array(data, ['maximum', 'features'])
-    #     labls = np.array(data.label)
-    #     features.extend(feats)
-    #     labels.extend(labls)
-    # features = np.array(features)
-    # labels = np.array(labels)
+            sums = [np.sum(prediction==l) for l in range(5)]
+            print n, 'score', k, score, sums
