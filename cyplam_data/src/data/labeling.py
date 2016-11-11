@@ -145,5 +145,5 @@ if __name__ == "__main__":
             features = analysis.get_data_array(dat, ['features'])
             prediction = np.array([clas.predict(X) for X in features])
             score = float(np.sum(prediction))/len(prediction)
-            sums = [np.sum(prediction==l) for l in range(5)]
-            print n, 'score', k, score, sums
+            sums = [np.sum(prediction == l) for l in range(5)]
+            print 'D', n, 't', k, 'score', score, 'labels', sums
