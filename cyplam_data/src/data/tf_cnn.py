@@ -21,7 +21,7 @@ from data import labeling
 from data import analysis
 
 from sklearn.utils import shuffle
-from sklearn import cross_validation
+from sklearn import model_selection
 
 
 def read_datasets(dirnames, offset=0):
@@ -41,7 +41,7 @@ def read_datasets(dirnames, offset=0):
 dirnames = ['/home/jorge/data/data_set23/20160923_2v_oven']
 features, targets = read_datasets(dirnames, offset=0)
 
-X_train, X_test, y_train, y_test = cross_validation.train_test_split(
+X_train, X_test, y_train, y_test = model_selection.train_test_split(
     features, targets, test_size=0.6, random_state=0)
 
 
@@ -52,14 +52,9 @@ batch_size = 128
 display_step = 10
 
 # Network Parameters
-n_input = 784 # MNIST data input (img shape: 28*28)
-n_classes = 10 # MNIST total classes (0-9 digits)
-dropout = 0.75 # Dropout, probability to keep units
-
-# tf Graph input
-x = tf.placeholder(tf.float32, [None, n_input])
-y = tf.placeholder(tf.float32, [None, n_classes])
-keep_prob = tf.placeholder(tf.float32) #dropout (keep probability)
+n_input = 784  # MNIST data input (img shape: 28*28)
+n_classes = 10  # MNIST total classes (0-9 digits)
+dropout = 0.75  # Dropout, probability to keep units
 
 
 # Create some wrappers for simplicity
@@ -103,6 +98,12 @@ def conv_net(x, weights, biases, dropout):
     out = tf.add(tf.matmul(fc1, weights['out']), biases['out'])
     return out
 
+
+# tf Graph input
+x = tf.placeholder(tf.float32, [None, n_input])
+y = tf.placeholder(tf.float32, [None, n_classes])
+keep_prob = tf.placeholder(tf.float32)  # dropout (keep probability)
+
 # Store layers weight & bias
 weights = {
     # 5x5 conv, 1 input, 32 outputs
@@ -136,6 +137,9 @@ accuracy = tf.reduce_mean(tf.cast(correct_pred, tf.float32))
 # Initializing the variables
 init = tf.initialize_all_variables()
 
+# Add ops to save and restore all the variables.
+saver = tf.train.Saver()
+
 # Launch the graph
 with tf.Session() as sess:
     sess.run(init)
@@ -151,19 +155,56 @@ with tf.Session() as sess:
             loss, acc = sess.run([cost, accuracy], feed_dict={x: batch_x,
                                                               y: batch_y,
                                                               keep_prob: 1.})
-            print("Iter " + str(step*batch_size) + ", Minibatch Loss= " + \
-                  "{:.6f}".format(loss) + ", Training Accuracy= " + \
+            print("Iter " + str(step*batch_size) + ", Minibatch Loss= " +
+                  "{:.6f}".format(loss) + ", Training Accuracy= " +
                   "{:.5f}".format(acc))
         step += 1
     print("Optimization Finished!")
+
+    # Save the variables to disk.
+    save_path = saver.save(sess, "model.ckpt")
+    print("Model saved in file: %s" % save_path)
 
     # Calculate accuracy for 256 mnist test images
     # print("Testing Accuracy:", \
     #     sess.run(accuracy, feed_dict={x: mnist.test.images[:256],
     #                                   y: mnist.test.labels[:256],
     #                                   keep_prob: 1.}))
-    print("Testing Accuracy:", \
-        sess.run(accuracy, feed_dict={x: X_test, y: y_test, keep_prob: 1.}))
+    print("Testing Accuracy:",
+          sess.run(accuracy, feed_dict={x: X_test, y: y_test, keep_prob: 1.}))
 
-    predicted = sess.run(tf.argmax(pred, 1), feed_dict={x: features})
-    print('Predicted:', predicted)
+
+
+dirnames = ['/home/jorge/data/data_set23/20160922_1p',
+            '/home/jorge/data/data_set23/20160923_2v',
+            '/home/jorge/data/data_set23/20160923_3t',
+            '/home/jorge/data/data_set23/20160923_4c',
+            '/home/jorge/data/data_set23/20160923_5f',
+            '/home/jorge/data/data_set23/20160923_6c',
+            '/home/jorge/data/data_set23/20160923_1p_oven',
+            '/home/jorge/data/data_set23/20160923_2v_oven',
+            '/home/jorge/data/data_set23/20160923_3t_oven',
+            '/home/jorge/data/data_set23/20160923_4c_oven',
+            '/home/jorge/data/data_set23/20160923_5f_oven',
+            '/home/jorge/data/data_set23/20160923_6c_oven']
+
+
+# Add ops to save and restore all the variables.
+saver = tf.train.Saver()
+
+# Later, launch the model, use the saver to restore variables from disk, and
+# do some work with the model.
+with tf.Session() as sess:
+    # Restore variables from disk.
+    saver.restore(sess, "model.ckpt")
+    print("Model restored.")
+    # Do some work with the model
+    filenames = labeling.get_filenames(dirnames)
+    for n, filename in enumerate(filenames):
+        data, labels = labeling.read_datasets([filename], offset=0)
+        for k, dat in enumerate(data):
+            frames = analysis.read_frames(dat.frame)[:,2:30,2:30].reshape(-1, 784) / 1024.
+            predicted = sess.run(tf.argmax(pred, 1), feed_dict={x: frames, keep_prob: 1.})
+            score = float(np.sum(predicted))/len(predicted)
+            sums = [np.sum(predicted == l) for l in range(5)]
+            print('D', n, 't', k, 'score', score, 'labels', sums)
