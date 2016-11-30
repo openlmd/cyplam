@@ -100,7 +100,7 @@ class QtData(QtGui.QWidget):
             self.txtOutput.textCursor().insertText('> stopped.\n')
 
     def saveParameters(self):
-        filename = 'param_' + self.name + '.yaml'
+        filename = self.name + '.yaml'
         params = {param[1:]: rospy.get_param(param) for param in PARAMS}
         with open(os.path.join(self.dirdata, filename), 'w') as outfile:
             outfile.write(yaml.dump(params, default_flow_style=False))
@@ -108,11 +108,13 @@ class QtData(QtGui.QWidget):
 
     def saveRoutine(self):
         filename = self.name + '.jas'
-        print 'New routine:', filename
+        routine = rospy.get_param('/routine')
+        with open(os.path.join(self.dirdata, filename), 'w') as outfile:
+            outfile.write(routine)
 
     def callProgram(self):
         os.chdir(self.dirdata)
-        filename = 'data_' + self.name + '.bag'
+        filename = self.name + '.bag'
         self.recording = True
         self.process.start(
             'rosrun rosbag record -O %s %s' % (filename, ' '.join(TOPICS)))
@@ -130,6 +132,7 @@ class QtData(QtGui.QWidget):
                 self.saveParameters()
                 self.txtOutput.textCursor().insertText(
                     '> recording topics:\n%s\n' % '\n'.join(TOPICS))
+                self.saveRoutine()
                 self.callProgram()
             elif self.status and not status:
                 self.killProgram()

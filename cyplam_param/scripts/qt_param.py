@@ -19,10 +19,8 @@ class QtParam(QtGui.QWidget):
 
         self.btnAccept.clicked.connect(self.btnAcceptClicked)
 
-        if rospy.has_param('/powder'):
-            self.setPowderParameters(rospy.get_param('/powder'))
-        if rospy.has_param('/process'):
-            self.setProcessParameters(rospy.get_param('/process'))
+        self.setPowderParameters(rospy.get_param('/powder'))
+        self.setProcessParameters(rospy.get_param('/process'))
 
     def getPowderParameters(self):
         params = {'shield': self.sbShield.value(),
@@ -49,16 +47,10 @@ class QtParam(QtGui.QWidget):
         self.sbFocus.setValue(params['focus'])
 
     def btnAcceptClicked(self):
-        print '# Powder parameters'
         powder = self.getPowderParameters()
         rospy.set_param('/powder', powder)
-        print 'Powder parameters:', rospy.get_param('/powder')
-
-        print '# Process parameters'
         process = self.getProcessParameters()
         rospy.set_param('/process', process)
-        print 'Process parameters:', rospy.get_param('/process')
-
         self.accepted.emit([])
 
 
