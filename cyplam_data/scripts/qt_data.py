@@ -23,7 +23,8 @@ TOPICS = ['/tachyon/image',
           '/camera/image',
           '/tachyon/temperature',
           #'/tachyon/geometry',
-          #'/control/power',
+          '/control/power',
+          #'/ueye/cloud',
           '/joint_states']
 
 PARAMS = ['/material',

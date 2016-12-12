@@ -161,7 +161,7 @@ def calculate_geometry(frames, thr=200):
     return data
 
 
-def find_tracks(tachyon, meas='minor_axis'):
+def find_tracks(tachyon, meas='width'):
     tachyonw = tachyon[tachyon[meas].notnull()]
     laser = np.array(tachyonw[meas] > 0)
     lasernr = np.append(np.bitwise_not(laser[0]), np.bitwise_not(laser[:-1]))
@@ -214,9 +214,14 @@ def calculate_clad(tachyon):
 
 def calculate_maximun(tachyon):
     data = {'digital_level': []}
+    i=0
     for frame in tachyon.frame:
         img = deserialize_frame(frame)
+
         data['digital_level'].append(img.max())
+        if img.max()>400:
+            print i
+        i = i + 1
     print max(data['digital_level'])
     return data
 
