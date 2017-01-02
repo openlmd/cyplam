@@ -12,8 +12,6 @@ from python_qt_binding import QtCore
 
 from mashes_measures.msg import MsgStatus
 
-from data.move_data import move_file
-from data.move_data import test_connection
 
 HOME = os.path.expanduser('~')
 DIRDATA = 'bag_data'
