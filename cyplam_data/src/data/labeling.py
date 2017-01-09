@@ -2,8 +2,8 @@ import os
 import glob
 import numpy as np
 
-from data import plot
-from data import analysis
+import plot
+import analysis
 
 
 def read_frames_track(tachyon, track, offset=0):
@@ -63,11 +63,12 @@ if __name__ == "__main__":
     dirname = args.data
 
     if dirname is None:
-        dirnames = ['/home/jorge/data/data_set23/20160922_1p_oven',
-                    '/home/jorge/data/data_set23/20160923_2v_oven',
-                    '/home/jorge/data/data_set23/20160923_3t_oven',
-                    '/home/jorge/data/data_set23/20160923_4c_oven',
-                    '/home/jorge/data/data_set23/20160923_5f_oven']
+        home = os.path.expanduser('~')
+        dirnames = [os.path.join(home, './data/data_set23/20160922_1p_oven'),
+                    os.path.join(home, './data/data_set23/20160923_2v_oven'),
+                    os.path.join(home, './data/data_set23/20160923_3t_oven'),
+                    os.path.join(home, './data/data_set23/20160923_4c_oven'),
+                    os.path.join(home, './data/data_set23/20160923_5f_oven')]
     else:
         dirnames = [dirname]
 
@@ -122,18 +123,18 @@ if __name__ == "__main__":
     # prediction = [clas.predict(X) for X in features]
     # defects.plot.plot_features(features, prediction)
 
-    dirnames = ['/home/jorge/data/data_set23/20160922_1p',
-                '/home/jorge/data/data_set23/20160923_2v',
-                '/home/jorge/data/data_set23/20160923_3t',
-                '/home/jorge/data/data_set23/20160923_4c',
-                '/home/jorge/data/data_set23/20160923_5f',
-                '/home/jorge/data/data_set23/20160923_6c',
-                '/home/jorge/data/data_set23/20160922_1p_oven',
-                '/home/jorge/data/data_set23/20160923_2v_oven',
-                '/home/jorge/data/data_set23/20160923_3t_oven',
-                '/home/jorge/data/data_set23/20160923_4c_oven',
-                '/home/jorge/data/data_set23/20160923_5f_oven',
-                '/home/jorge/data/data_set23/20160923_6c_oven']
+    dirnames = [os.path.join(home, './data/data_set23/20160922_1p'),
+                os.path.join(home, './data/data_set23/20160923_2v'),
+                os.path.join(home, './data/data_set23/20160923_3t'),
+                os.path.join(home, './data/data_set23/20160923_4c'),
+                os.path.join(home, './data/data_set23/20160923_5f'),
+                os.path.join(home, './data/data_set23/20160923_6c'),
+                os.path.join(home, './data/data_set23/20160922_1p_oven'),
+                os.path.join(home, './data/data_set23/20160923_2v_oven'),
+                os.path.join(home, './data/data_set23/20160923_3t_oven'),
+                os.path.join(home, './data/data_set23/20160923_4c_oven'),
+                os.path.join(home, './data/data_set23/20160923_5f_oven'),
+                os.path.join(home, './data/data_set23/20160923_6c_oven')]
     filenames = get_filenames(dirnames)
 
     for n, filename in enumerate(filenames):

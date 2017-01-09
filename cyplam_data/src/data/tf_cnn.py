@@ -1,12 +1,3 @@
-'''
-A Convolutional Network implementation example using TensorFlow library.
-This example is using the MNIST database of handwritten digits
-(http://yann.lecun.com/exdb/mnist/)
-
-Author: Aymeric Damien
-Project: https://github.com/aymericdamien/TensorFlow-Examples/
-'''
-
 from __future__ import print_function
 
 import tensorflow as tf
@@ -17,8 +8,8 @@ import tensorflow as tf
 
 import numpy as np
 
-from data import labeling
-from data import analysis
+import labeling
+import analysis
 
 from sklearn.utils import shuffle
 from sklearn import model_selection
@@ -230,29 +221,20 @@ def do_evaluation(dirnames):
 
 
 if __name__ == '__main__':
+    import os
+    home = os.path.expanduser("~")
 
-    #dirnames = ['/home/jorge/data/data_set23/20160923_2v_oven']
-    dirnames = ['/home/jorge/data/data_nov24/24112016_2v_1000']
+    #dirnames = [os.path.join(home, './data/data_set23/20160923_2v_oven')]
+    dirnames = [os.path.join(home, './data/data_nov24/24112016_2v_1000')]
 
     #run_training(dirnames)
 
-    # dirnames = ['/home/jorge/data/data_set23/20160922_1p',
-    #             '/home/jorge/data/data_set23/20160923_2v',
-    #             '/home/jorge/data/data_set23/20160923_3t',
-    #             '/home/jorge/data/data_set23/20160923_4c',
-    #             '/home/jorge/data/data_set23/20160923_5f',
-    #             '/home/jorge/data/data_set23/20160923_6c',
-    #             '/home/jorge/data/data_set23/20160922_1p_oven',
-    #             '/home/jorge/data/data_set23/20160923_2v_oven',
-    #             '/home/jorge/data/data_set23/20160923_3t_oven',
-    #             '/home/jorge/data/data_set23/20160923_4c_oven',
-    #             '/home/jorge/data/data_set23/20160923_5f_oven',
-    #             '/home/jorge/data/data_set23/20160923_6c_oven']
-    dirnames = ['/home/jorge/data/data_nov24/24112016_1v_900',
-                '/home/jorge/data/data_nov24/24112016_2v_1000',
-                '/home/jorge/data/data_nov24/24112016_3p_900',
-                '/home/jorge/data/data_nov24/24112016_4p_1000']
-    # dirnames = ['/home/jorge/data/29112016_solape01_7_1200',
-    #             '/home/jorge/data/29112016_solape05_7_1200']
+    dirnames = [os.path.join(home, './data/data_nov24/24112016_1v_900'),
+                os.path.join(home, './data/data_nov24/24112016_2v_1000'),
+                os.path.join(home, './data/data_nov24/24112016_3p_900'),
+                os.path.join(home, './data/data_nov24/24112016_4p_1000')]
+
+    # dirnames = [os.path.join(home, './data/29112016_solape01_7_1200'),
+    #             os.path.join(home, './data/29112016_solape05_7_1200')]
 
     do_evaluation(dirnames)
