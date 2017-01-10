@@ -4,9 +4,6 @@ import yaml
 import numpy as np
 import pandas as pd
 
-from measures.velocity import Velocity
-from measures.geometry import Geometry
-
 
 def read_yaml(filename):
     with open(filename, 'r') as f:
@@ -25,7 +22,7 @@ def serialize_frame(frame, encode='*.png'):
 
 def deserialize_frame(string):
     return cv2.imdecode(
-        np.fromstring(string, dtype=np.uint8), cv2.CV_LOAD_IMAGE_UNCHANGED)
+        np.fromstring(string, dtype=np.uint8), -1)
 
 
 def read_frames(frames):
@@ -71,6 +68,7 @@ def get_data_array(dataframe, labels):
 
 
 def calculate_velocity(time, position):
+    from measures.velocity import Velocity
     velocity = Velocity()
     data = {'speed': [], 'velocity': [], 'running': []}
     for k in range(len(position)):
@@ -82,6 +80,7 @@ def calculate_velocity(time, position):
 
 
 def calculate_geometry(frames, thr=200):
+    from measures.geometry import Geometry
     geometry = Geometry(thr)
     ellipses = [geometry.find_geometry(frame) for frame in frames]
     data = {'x': [], 'y': [], 'height': [], 'width': [], 'angle': []}

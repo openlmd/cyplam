@@ -225,9 +225,9 @@ if __name__ == '__main__':
     home = os.path.expanduser("~")
 
     #dirnames = [os.path.join(home, './data/data_set23/20160923_2v_oven')]
-    dirnames = [os.path.join(home, './data/data_nov24/24112016_2v_1000')]
+    dirnames = [os.path.join(home, './data/data_nov24/24112016_1v_900')]
 
-    #run_training(dirnames)
+    run_training(dirnames)
 
     dirnames = [os.path.join(home, './data/data_nov24/24112016_1v_900'),
                 os.path.join(home, './data/data_nov24/24112016_2v_1000'),

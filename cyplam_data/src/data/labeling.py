@@ -2,7 +2,6 @@ import os
 import glob
 import numpy as np
 
-import plot
 import analysis
 
 
@@ -52,6 +51,7 @@ def get_filenames(dirnames):
 
 
 if __name__ == "__main__":
+    import plot
     import argparse
     from defects import defects
 
