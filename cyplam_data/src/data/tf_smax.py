@@ -96,4 +96,3 @@ accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 print "Accuracy: ", sess.run(accuracy, feed_dict={x: data, y_: labels})
 predicted = sess.run(tf.argmax(y, 1), feed_dict={x: data})
 print 'Predicted:', predicted
-
