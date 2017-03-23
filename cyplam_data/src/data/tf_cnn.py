@@ -128,8 +128,13 @@ def do_evaluation(dirnames):
 if __name__ == '__main__':
     import os
     home = os.path.expanduser("~")
-    dirnames = [os.path.join(home, './data/data_nov24/24112016_1v_900'),
-                os.path.join(home, './data/data_nov24/24112016_2v_1000'),
-                os.path.join(home, './data/data_nov24/24112016_3p_900'),
-                os.path.join(home, './data/data_nov24/24112016_4p_1000')]
+    # dirnames = [os.path.join(home, './data/data_nov24/24112016_1v_900'),
+    #             os.path.join(home, './data/data_nov24/24112016_2v_1000'),
+    #             os.path.join(home, './data/data_nov24/24112016_3p_900'),
+    #             os.path.join(home, './data/data_nov24/24112016_4p_1000')]
+    dirnames = [os.path.join(home, './data/data_dec01/01122016_velocity_ramp_04'),
+                os.path.join(home, './data/data_dec01/01122016_power_ramp_02'),
+                os.path.join(home, './data/data_dec02/01122016_solape01_20'),
+                os.path.join(home, './data/data_dec02/01122016_solape01_20_control'),
+                os.path.join(home, './data/data_dec02/02122016_solape03_30_1300')]
     do_evaluation(dirnames)

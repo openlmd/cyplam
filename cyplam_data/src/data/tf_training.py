@@ -20,6 +20,7 @@ DISPLAY_STEP = 10
 n_input = 784  # MNIST data input (img shape: 28*28)
 n_classes = 10  # MNIST total classes (0-9 digits)
 dropout = 0.75  # Dropout, probability to keep units
+seed = 0 # Random seed
 
 
 def read_datasets(dirnames, offset=0):
@@ -27,8 +28,17 @@ def read_datasets(dirnames, offset=0):
     data, labels = labeling.read_datasets(filenames, offset=offset)
     frames = [analysis.read_frames(d.frame)[:,2:30,2:30].reshape(-1, 784) / 1024. for d in data]
     features, targets = labeling.label_data(frames, labels)
-    features = features[targets >= 0]
-    targets = targets[targets >= 0]
+    lbls = np.unique(labels)
+    lbls = lbls[lbls >= 0]
+    n_samples = np.min([np.sum(targets == tgt) for tgt in lbls])
+    feats, targs = [], []
+    for tgt in lbls:
+        feat, targ = shuffle(features[targets == tgt], targets[targets == tgt], random_state=seed, n_samples=n_samples)
+        feats.append(feat)
+        targs.append(targ)
+        print(len(feat), len(targ))
+    features = np.concatenate(feats)
+    targets = np.concatenate(targs)
     t = np.zeros((len(targets), 10))
     for k in range(len(targets)):
         t[k][targets[k]] = 1
@@ -40,7 +50,7 @@ def run_training(dirnames):
     features, targets = read_datasets(dirnames, offset=0)
 
     X_train, X_test, y_train, y_test = model_selection.train_test_split(
-        features, targets, test_size=0.6, random_state=0)
+        features, targets, test_size=0.6, random_state=seed)
 
     # tf Graph input
     x = tf.placeholder(tf.float32, [None, n_input])
@@ -64,7 +74,7 @@ def run_training(dirnames):
         # Keep training until reach max iterations
         while step * BATCH_SIZE < TRAINING_ITERS:
             # batch_x, batch_y = mnist.train.next_batch(BATCH_SIZE)
-            batch_x, batch_y = shuffle(X_train, y_train, random_state=0, n_samples=BATCH_SIZE)
+            batch_x, batch_y = shuffle(X_train, y_train, random_state=seed, n_samples=BATCH_SIZE)
             # Run optimization op (backprop)
             sess.run(optimizer, feed_dict={x: batch_x, y: batch_y, keep_prob: dropout})
             if step % DISPLAY_STEP == 0:
@@ -82,11 +92,6 @@ def run_training(dirnames):
         save_path = saver.save(sess, "../../config/model.ckpt")
         print("Model saved in file: %s" % save_path)
 
-        # Calculate accuracy for 256 mnist test images
-        # print("Testing Accuracy:", \
-        #     sess.run(accuracy, feed_dict={x: mnist.test.images[:256],
-        #                                   y: mnist.test.labels[:256],
-        #                                   keep_prob: 1.}))
         print("Testing Accuracy:",
               sess.run(accuracy, feed_dict={x: X_test, y: y_test, keep_prob: 1.}))
 
@@ -94,5 +99,7 @@ def run_training(dirnames):
 if __name__ == '__main__':
     import os
     home = os.path.expanduser("~")
-    dirnames = [os.path.join(home, './data/data_nov24/24112016_2v_1000')]
+    # dirnames = [os.path.join(home, './data/data_nov24/24112016_2v_1000')]
+    dirnames = [os.path.join(home, './data/data_dec01/01122016_power_ramp_02'),
+                os.path.join(home, './data/data_dec01/01122016_velocity_ramp_04')]
     run_training(dirnames)

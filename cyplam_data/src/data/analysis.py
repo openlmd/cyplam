@@ -241,6 +241,7 @@ if __name__ == "__main__":
 
     if 'tachyon' in data.keys():
         tachyon = data['tachyon']
+        print 'Tachyon length:', len(tachyon)
         tachyon = tachyon[tachyon.frame.notnull()]
 
         if 'minor_axis' in tachyon.columns:
@@ -258,7 +259,7 @@ if __name__ == "__main__":
                 plot.plot_power(tachyon[tachyon.power.notnull()])
         else:
             frames = read_frames(tachyon.frame)
-            geometry = calculate_geometry(frames, thr=150)
+            geometry = calculate_geometry(frames, thr=400)
             tachyon = append_data(tachyon, geometry)
             tracks = _find_tracks(tachyon, meas='width')
             print 'Tracks:', len(tracks), tracks
@@ -271,6 +272,13 @@ if __name__ == "__main__":
     if 'camera' in data.keys():
         camera = data['camera']
         print 'Camera length:', len(camera)
+
+        frames = read_frames(camera.frame)
+        geometry = calculate_geometry(frames, thr=150)
+        camera = append_data(camera, geometry)
+        tracks = _find_tracks(camera, meas='width')
+        print 'Tracks:', len(tracks), tracks
+        plot.plot_geometry(find_data_tracks(camera, tracks, offset=0.1))
 
         cframes = read_frames(find_data_tracks(camera, tracks, offset=0).frame)
         plot.plot_frames(cframes)
