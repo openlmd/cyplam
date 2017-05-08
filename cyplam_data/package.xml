@@ -2,7 +2,7 @@
 <package>
   <name>cyplam_data</name>
   <version>0.1.0</version>
-  <description>The cyplan_data package</description>
+  <description>The cyplam_data package</description>
   <maintainer email="veronica.panadeiro@aimen.es">Verónica Panadeiro</maintainer>
   <license>BSD</license>
 
@@ -11,9 +11,13 @@
   <build_depend>roscpp</build_depend>
   <build_depend>rospy</build_depend>
   <build_depend>std_msgs</build_depend>
+  <build_depend>sensor_msgs</build_depend>
+  <build_depend>message_generation</build_depend>
 
   <run_depend>roscpp</run_depend>
   <run_depend>rospy</run_depend>
   <run_depend>std_msgs</run_depend>
+  <run_depend>sensor_msgs</run_depend>
+  <run_depend>message_runtime</run_depend>
 
 </package>

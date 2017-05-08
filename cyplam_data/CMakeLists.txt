@@ -9,10 +9,22 @@ find_package(catkin REQUIRED COMPONENTS
   message_generation
 )
 
+add_message_files(
+  FILES
+  MsgPredictv.msg
+  MsgPredictp.msg
+)
 
 catkin_python_setup()
 
-catkin_package()
+generate_messages(
+  DEPENDENCIES
+  std_msgs
+)
+
+catkin_package(
+  CATKIN_DEPENDS message_runtime
+)
 
 include_directories(
   ${catkin_INCLUDE_DIRS}
