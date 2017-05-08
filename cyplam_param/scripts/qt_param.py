@@ -19,8 +19,14 @@ class QtParam(QtGui.QWidget):
 
         self.btnAccept.clicked.connect(self.btnAcceptClicked)
 
-        self.setPowderParameters(rospy.get_param('/powder'))
-        self.setProcessParameters(rospy.get_param('/process'))
+        if rospy.has_param('/powder'):
+            self.setPowderParameters(rospy.get_param('/powder'))
+        else:
+            print 'QtParam: no powder loaded'
+        if rospy.has_param('/process'):
+            self.setProcessParameters(rospy.get_param('/process'))
+        else:
+            print 'QtParam: no process loaded'
 
     def getPowderParameters(self):
         params = {'shield': self.sbShield.value(),
