@@ -98,3 +98,6 @@ def plot_temperature(data):
 
 def plot_digital(data):
     plot_data(data, ['time'], ['digital_level'], ['blue'])
+
+def plot_predict(data):
+    plot_data(data, ['time'], ['power'], ['blue'])

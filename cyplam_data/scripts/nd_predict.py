@@ -32,7 +32,7 @@ class NdPredict():
         self.bridge = CvBridge()
 
         path = rospkg.RosPack().get_path('cyplam_data')
-        path = os.path.join(path, 'config/models', '2017_05_05_14_27_06model.ckpt')
+        path = os.path.join(path, 'config/models', '2017_05_03_10_05_42model.ckpt')
 
         self.pred = PowerPredictor(path)
 
@@ -44,11 +44,9 @@ class NdPredict():
     def cb_image(self, msg_image):
         try:
             frame = self.bridge.imgmsg_to_cv2(msg_image)
-            print frame.dtype
             time = msg_image.header.stamp
             self.image = frame
             v, p = self.predict(self.image)
-            print 'pot', p
             self.msg_predictv.value = v
             self.msg_predictv.header.stamp = time
             self.msg_predictp.value = p

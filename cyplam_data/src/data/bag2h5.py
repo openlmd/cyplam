@@ -66,6 +66,12 @@ def read_topic_img(bag, topic):
     images = pd.DataFrame({'time': times, 'frame': frames})
     return images
 
+def read_predict_power(bag, topic):
+    dat_pre= {}
+    dat_pre= read_topic_data(bag, topic)
+    dat_pre= dat_pre.rename(columns={'value': 'power'})
+    return dat_pre
+
 
 def read_topic_joints(bag, topic='/joint_states'):
     data_dic = {}
@@ -99,6 +105,12 @@ def read_topics(bag, topics):
                 data[names[-2]] = dat
         elif names[-1] == 'joint_states':
             data['robot'] = read_topic_joints(bag, topic)
+        elif names[-1] == 'power' and names[-2] == 'predict':
+            dat= read_predict_power(bag, topic)
+            if 'predict' in data.keys():
+                data['predict'] = merge_topic_data(data['predict'], dat)
+            else:
+                data['predict'] = dat
         elif len(names) > 1:
             dat = read_topic_data(bag, topic)
             if names[-2] in data.keys():

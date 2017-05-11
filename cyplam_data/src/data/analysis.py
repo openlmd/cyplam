@@ -233,6 +233,13 @@ if __name__ == "__main__":
             tables = args.tables
             data = read_hdf5(filename, tables)
 
+    if 'predict' in data.keys():
+        predict = data['predict']
+        print 'Predict columns:', predict.columns
+        # tachyon = tachyon[tachyon.frame.notnull()]
+        if 'power' in predict.columns:
+            print 'potencia encontrada'
+
     if 'robot' in data.keys():
         robot = data['robot']
         velocity = calculate_velocity(robot.time, robot.position)
